@@ -1,0 +1,31 @@
+Installation Instructions
+*************************
+
+Copyright (C) 2013 Free Software Foundation, Inc.
+
+   Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.  This file is offered as-is,
+without warranty of any kind.
+
+Basic Installation
+==================
+   The simplest way to compile this program is:
+
+  1. `cd' to the directory containing the program's source code.
+
+  2. Type `make fastdd' to compile fastdd.
+
+  3. Copy the executable  in a directory included  in the environmental
+     variable PATH.
+     
+
+Required packages
+=================
+   Note that the current implementation requires the following packages:
+  
+  * zlib1g-dev
+  
+  * libboost-regex-dev
+
+  * libssl

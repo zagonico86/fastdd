@@ -1,0 +1,115 @@
+FASTDD
+======
+fastdd  is  an open-ended  imagin tool.  It  provides  a powerful  command  line
+interface  to perform efficent imaging of devices,  or more in general of files.
+It also provides a C++ interface  that allows developers to easily extend fastdd
+capabilities, modifying copied data on-the-fly.
+For more information on this, please visit fastdd homepage:
+http://www.dei.unipd.it/~zagonico/fastdd
+or its page on git:
+https://github.com/zagonico86/fastdd
+
+REQUIREMENTS
+============
+zlib1g
+libboost-regex
+libssl
+
+USAGE
+=====
+SYNOPSIS
+--------
+fastdd [OPERANDS] [OPTIONS]
+
+OPERANDS
+--------
+if=FILE
+	specify input file, default stdin
+of=FILE
+	specify output file, default stdout. Can be used more than once.
+bs=BYTES
+	read and write BYTES bytes at time
+ibs=BYTES
+	read BYTES bytes at time (must be multiple or submultiple of obs)
+obs=BYTES
+	write BYTES bytes at time (must be multiple or submultiple of ibs)
+count=BLOCKS
+	number of input block ibs-sized to read
+skip=BLOCKS
+	number of input block ibs-sized to skip
+seek=BLOCKS
+	number of output block obs-sized to seek (padded with '\0' in new files)
+log=FILE
+	enable verbose mode and save output produced in FILE
+reread-bs=BYTES
+	when a input reading error occurs, re-read the current input block with
+	this block size (to mantain an high reading speed). When one of these
+	blocks have an error will be read at 512-bytes blocks. Default: 512.
+reading-attempts=N
+	try to read N times a 512-bytes sector before considering it unreadeble
+	(default: 1). Use reading-attempts=0 to avoid any further reading of
+	damaged blocks (just pad it with \0)
+hash-blocks=ALGORITHM1[,ALGORITHM2,...]
+	use the specified hash algorithms to check input and output blocks
+hash-files=ALGORITHM1[,ALGORITHM2,...]
+	use the specified hash algorithms to check input and output files
+hash-blocks-save=FILE
+	save in FILE the hash of the input blocks
+
+OPTIONS
+--hash-blocks-check, -c
+	re-read every written block and check its hashes with the corrisponding
+	input block. Exit on re-reading error
+--hash-file-in
+	print hashes of input file at the end of computation
+--hash-file-out
+	print hashes of output file at the end of computation
+--hash-file-all, -f
+	print hashes of all files at the end of computation
+--direct-input-disabled, -i
+	disable O_DIRECT flag in opening input file
+--direct-output-disabled, -o
+	disable O_DIRECT flag in opening output file
+--get-partition-table
+	print the partition table contained in the input file (if any)
+--fast
+	same as 'reading-attempts=0 bs=16M'
+--no-parallel, -p
+	make every read/write action sequentially, without using multi-threading
+--no-progress-bar
+	disable progress bar
+--ignore-modules-errors
+	ignore errors occurred in the execution of modules (otherwise it asks how
+	to procede, stopping the copy until an answer is given)
+--debug
+	debug mode, it is ignored if a log file is not specified.
+--help, -h
+	show this help
+
+BYTES and BLOCKS accept multiplicative suffixes: K=1024, KB=1000,
+M=1024*1024, MB=1000*1000, G=1024*1024*1024, GB=1000*1000*1000,
+T=1024^4 and TB=1000^4.
+
+MODULES
+fastdd's capabilities can be easily expanded by createing a new module
+implementing fastdd_module.hpp interface, and adding it to the main program
+with few code lines in init_modules() and fin_modules() functions.
+
+EXAMPLES OF USE
+fastdd if="input file" of="file with spaces" of=another\ one of=file3
+bs=1M hash-files=sha1,sha256 hash-blocks=md5 --hash-blocks-check
+--hash-files-all
+copy content of file "input file" in files "file with spaces",
+"another one" and "file3", showing sha1 and sha256 of all files
+and checking the equality of md5 of blocks copied for early stop. 
+
+
+Acknowledgements
+----------------
+Università degli Studi di Padova
+
+
+Contact info
+------------
+Paolo Bertasi <paolo.bert@gmail.com>
+Nicola Zago <zago.nicola@gmail.com>
