@@ -101,7 +101,7 @@ bs=1M hash-files=sha1,sha256 hash-blocks=md5 --hash-blocks-check
 --hash-files-all
 copy content of file "input file" in files "file with spaces",
 "another one" and "file3", showing sha1 and sha256 of all files
-and checking the equality of md5 of blocks copied for early stop. 
+and checking the equality of md5 of blocks copied for early stop.
 
 
 Acknowledgements

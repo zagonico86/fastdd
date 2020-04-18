@@ -1,6 +1,6 @@
 CC      = gcc
-CFLAGS  = -D_FILE_OFFSET_BITS=64 -O3 -pthread -lssl 
-REGEX_FLAG = -lboost_regex 
+CFLAGS  = -D_FILE_OFFSET_BITS=64 -O3 -pthread -lssl
+REGEX_FLAG = -lboost_regex
 GZIP_FLAG = -lz
 
 all: clean fastdd

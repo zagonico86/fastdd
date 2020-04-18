@@ -2,21 +2,21 @@
  * fastdd, v. 1.0.0, an open-ended forensic imaging tool
  * Copyright (C) 2013, Free Software Foundation, Inc.
  * written by Paolo Bertasi and Nicola Zago
- * 
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- * 
+ *
  */
 
 #ifndef _FASTDD_MODULE_CONV_H
@@ -165,17 +165,17 @@ static unsigned char trans_table[256];
 class fastdd_module_conv : public fastdd_module {
     private:
     enum mode {NONE=0, ASCII_TO_EBCDIC=1, EBCDIC_TO_ASCII=2, ASCII_TO_IBM=4, TO_LOWER=8, TO_UPPER=16};
-    
+
     bool is_act;
     int flags;
-    
+
     string error;
-    
+
     public:
     fastdd_module_conv() {
         is_act=false;
         flags=0;
-        
+
         for (int a=0; a<256; a++)
             trans_table[a] = a;
     }
@@ -183,11 +183,11 @@ class fastdd_module_conv : public fastdd_module {
     bool validate(void) {
         if (flags) {
             is_act = true;
-        
+
             if (flags & EBCDIC_TO_ASCII)
                 for (int a=0; a<256; a++)
                     trans_table[a] = ebcdic_to_ascii[trans_table[a]];
-                    
+
             if (flags & TO_UPPER) {
                 for (int a=0; a<256; a++)
                     trans_table[a] = toupper(trans_table[a]);
@@ -196,17 +196,17 @@ class fastdd_module_conv : public fastdd_module {
                 for (int a=0; a<256; a++)
                     trans_table[a] = tolower(trans_table[a]);
             }
-            
+
             if (flags & ASCII_TO_EBCDIC)
                 for (int a=0; a<256; a++)
                     trans_table[a] = ascii_to_ebcdic[trans_table[a]];
-            
+
             if (flags & ASCII_TO_IBM)
                 for (int a=0; a<256; a++)
                     trans_table[a] = ascii_to_ibm[trans_table[a]];
-                    
+
         }
-        
+
         return true;
     }
 
@@ -267,7 +267,7 @@ class fastdd_module_conv : public fastdd_module {
             flags |= ASCII_TO_IBM;
             return true;
         }
-        
+
         error = flag+" is not a valid flag";
         return false;
     }
@@ -276,14 +276,14 @@ class fastdd_module_conv : public fastdd_module {
         for (uint64_t a=0; a<buff->length; a++) {
             buff->buffer[a] = trans_table[buff->buffer[a]];
         }
-        
+
         return true;
     }
-    
+
     string get_error(void) {
         return error;
     }
-    
+
     string get_help() {
         stringstream ss;
         ss << "   CONVERSIONS\n";
@@ -297,7 +297,7 @@ class fastdd_module_conv : public fastdd_module {
         ss << "   --ebcdic-to-ascii\n";
         ss << "      from EBCDIC to ASCII\n";
         ss << "   --ascii-to-ibm\n";
-        ss << "      from ASCII to alternate EBCDIC\n"; 
+        ss << "      from ASCII to alternate EBCDIC\n";
 
         return ss.str();
     }

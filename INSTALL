@@ -18,14 +18,14 @@ Basic Installation
 
   3. Copy the executable  in a directory included  in the environmental
      variable PATH.
-     
+
 
 Required packages
 =================
    Note that the current implementation requires the following packages:
-  
+
   * zlib1g-dev
-  
+
   * libboost-regex-dev
 
   * libssl

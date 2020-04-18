@@ -2,21 +2,21 @@
  * fastdd, v. 1.0.0, an open-ended forensic imaging tool
  * Copyright (C) 2013, Free Software Foundation, Inc.
  * written by Paolo Bertasi and Nicola Zago
- * 
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- * 
+ *
  */
 
 #ifndef _FASTDD_MODULE_GZIP_H
@@ -46,7 +46,7 @@ class fastdd_module_gzip : public fastdd_module {
     unsigned char *local_buffer;
     string errore;
     z_stream strm;
-    
+
     ////// SOURCE of the zlib code:
     /*-zpipe.c: example of proper use of zlib's inflate() and deflate()
    Not copyrighted -- provided to the public domain
@@ -74,9 +74,9 @@ class fastdd_module_gzip : public fastdd_module {
             errore = "zlib version mismatch";
         }
     }*/
-    
+
     public:
-    
+
     fastdd_module_gzip(settings_t *settings_, buffer_t *buffer_) {
         is_std_of = false;
         is_act = false;
@@ -90,13 +90,13 @@ class fastdd_module_gzip : public fastdd_module {
 
     bool validate() {
         if (!is_act) return true;
-        
+
         if (settings->bs<512) {
             errore = "compression requires bs>=512 bytes";
             is_act = false;
             return false;
         }
-        
+
         // no direct I/O e seek in output
         if (settings->is_direct_o && settings->seek) {
             settings->is_direct_o = false;
@@ -113,10 +113,10 @@ class fastdd_module_gzip : public fastdd_module {
             errore = "chunk is bigger than bs";
             return false;
         }
-        
+
         buffer_max = settings->bs+262144;
         local_buffer = (unsigned char *) malloc(buffer_max*sizeof(unsigned char));
-        
+
         // ingrandisco i buffer originali
         free(buffer_orig->buffer);
         free(buffer_orig->the_other_buffer->buffer);
@@ -144,7 +144,7 @@ class fastdd_module_gzip : public fastdd_module {
             is_act = false;
             return false;
         }
-        
+
         is_act = true;
         return true;
     }
@@ -160,7 +160,7 @@ class fastdd_module_gzip : public fastdd_module {
     bool set_operand(string operand, string value) {
         if (!operand.compare("compression")) {
             compression_level = -1;
-            
+
             compression_level = atoi(value.c_str());
             if (compression_level<0 || compression_level>9) {
                 errore = "invalid compression level";
@@ -177,7 +177,7 @@ class fastdd_module_gzip : public fastdd_module {
             }
             return true;
         }
-        
+
         errore = "invalid operand";
         return false;
     }
@@ -185,7 +185,7 @@ class fastdd_module_gzip : public fastdd_module {
     bool is_flag(string flag) {
         return false;
     }
-    
+
     bool set_flag(string flag) {
         return false;
     }
@@ -196,7 +196,7 @@ class fastdd_module_gzip : public fastdd_module {
         strm.avail_in = buff->length;
 
         int chunk_offset=0;
-        
+
         do {
             strm.avail_out = chunk;
             strm.next_out = local_buffer+chunk_offset;
@@ -205,25 +205,25 @@ class fastdd_module_gzip : public fastdd_module {
          //   cerr << chunk_offset << " -" << have << endl;
             chunk_offset += have;
         } while (strm.avail_out == 0);
-        
+
   //      cerr << chunk_offset << endl;
         memcpy(buff->buffer, local_buffer, chunk_offset);
         buff->length = chunk_offset;
-        
+
   //      cerr << buff->length << endl;
-        
+
         if (buff->is_last) {
             (void)deflateEnd(&strm);
             is_act = false;
         }
-        
+
         return true;
     }
-    
+
     string get_error() {
         return errore;
     }
-    
+
     string get_help() {
         stringstream ss;
         ss << "   COMPRESSION\n";
@@ -234,12 +234,12 @@ class fastdd_module_gzip : public fastdd_module {
         ss << "      checking among input and output files should not be used.\n";
         ss << "   chunk=BYTES\n";
         ss << "      set the compression window (default: min(16K,bs) )\n";
-        
+
         cerr << ss.str() << endl;
-        
+
         return ss.str();
     }
-    
+
     ~fastdd_module_gzip() {
         if (local_buffer)
             free(local_buffer);

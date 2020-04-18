@@ -2,21 +2,21 @@
  * fastdd, v. 1.0.0, an open-ended forensic imaging tool
  * Copyright (C) 2013, Free Software Foundation, Inc.
  * written by Paolo Bertasi and Nicola Zago
- * 
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- * 
+ *
  */
 
 #ifndef _FASTDD_MODULE_REGEX_H
@@ -43,21 +43,21 @@ class fastdd_module_regex : public fastdd_module {
     private:
     bool is_simple_regex_match;
     bool is_human_readable_regex_match;
-    
+
     bool is_act;
     bool is_first_block;
     bool is_get_partition;
     uint64_t next_needed;
     ofstream ofstream_regex;
     vector<boost::regex> re;
-    
+
     string error;
-    
+
     partition_manager pm;
     fastdd_file_t **fi;
     settings_t *settings;
     uint64_t ibs;
-    
+
     /** read regexes from file given with option find= */
     bool init_regexes_from_file(const char *file_with_regex) {
         ifstream fi;
@@ -71,7 +71,7 @@ class fastdd_module_regex : public fastdd_module {
         }
 
         string line;
-        
+
         getline ( fi, line);
         while (line.size()) {
             try {
@@ -89,12 +89,12 @@ class fastdd_module_regex : public fastdd_module {
         }
 
         fi.close();
-        
+
         return true;
     }
-    
+
     public:
-    
+
     fastdd_module_regex(fastdd_file_t **fi_, settings_t *settings_) {
         is_act = true;
         is_first_block = true;
@@ -104,7 +104,7 @@ class fastdd_module_regex : public fastdd_module {
         fi = fi_;
         settings = settings_;
     }
-    
+
     bool validate() {
         if (re.size() && !(ofstream_regex.is_open())) {
             error = "pattern-matching-results not setted";
@@ -112,27 +112,27 @@ class fastdd_module_regex : public fastdd_module {
         }
         if (!re.size())
             is_act = false;
-        
+
         pm = partition_manager((*fi)->file_name);
         ibs = settings->ibs;
-        
+
         return true;
     }
-    
+
     string get_name(void) {
         return "fastdd_regex_module";
     }
-    
+
     bool is_active(void) {
         return is_act;
     }
-    
+
     bool is_operand(string operand) {
         return (!operand.compare("pattern-file") || !operand.compare("find-regex") || !operand.compare("pattern-matching-results"));
     }
-    
+
     bool set_operand(string operand, string value) {
-        
+
         if (!operand.compare("pattern-file")) {
             return init_regexes_from_file(value.c_str());
         }
@@ -160,14 +160,14 @@ class fastdd_module_regex : public fastdd_module {
             }
             return true;
         }
-        
+
         return false;
     }
 
     bool is_flag(string flag) {
         return ( !flag.compare("--simple-regex-match") || !flag.compare("--human-readable-regex-match"));
     }
-    
+
     bool set_flag(string flag) {
         if (!flag.compare("--simple-regex-match")) {
             is_simple_regex_match = true;
@@ -178,13 +178,13 @@ class fastdd_module_regex : public fastdd_module {
             is_human_readable_regex_match = true;
             return true;
         }
-        
+
         return false;
     }
 
     bool transform(buffer_t *buff) {
         boost::smatch what;
-        
+
         if (is_get_partition) {
             if (is_first_block) {
                 next_needed = pm.update(buff->buffer, 0);
@@ -196,7 +196,7 @@ class fastdd_module_regex : public fastdd_module {
             }
             if (pm.is_error()) is_get_partition=false;
         }
-        
+
         int j;
         string search_buffer(buff->buffer, buff->buffer+buff->length);
         int l=re.size();
@@ -216,13 +216,13 @@ class fastdd_module_regex : public fastdd_module {
                     boost::sregex_iterator m2;
 
                     if (m1==m2) continue;
-                    
+
                     do {
                         boost::smatch m = *m1;
-                        
+
                         if (m.length(0)>0) {
                             if (!m[0].matched) ofstream_regex << "? ";
-                            
+
                             ofstream_regex << setbase(10) << j << " " << (((*fi)->current_position+m.position())/ibs ) << " " <<
                                 ((*fi)->current_position+m.position()) << " " << m.length(0) << " ";
                             if (is_human_readable_regex_match) {
@@ -238,7 +238,7 @@ class fastdd_module_regex : public fastdd_module {
                         }
                         m1++;
                     } while ( !(m1 == m2));
-                    
+
                 }
                 catch (boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<std::runtime_error> >& e) {
                     stringstream ss;
@@ -250,11 +250,11 @@ class fastdd_module_regex : public fastdd_module {
         }
         return true;
     }
-    
+
     string get_error(void) {
         return error;
     }
-    
+
     string get_help() {
         stringstream ss;
         ss << "   PATTERN MATCHING\n";
@@ -282,7 +282,7 @@ class fastdd_module_regex : public fastdd_module {
         ss << "      for each block just specify which regexes it contains\n";
         ss << "   --human-readable-regex-match\n";
         ss << "      write matching regexes in ascii instead of in hexadecimal\n";
-        
+
         return ss.str();
     }
 };
