@@ -1,22 +1,22 @@
 /*
- * fastdd, v. 1.0.0, an open-ended forensic imaging tool
- * Copyright (C) 2013, Free Software Foundation, Inc.
- * written by Paolo Bertasi and Nicola Zago
- * 
+ * fastdd, v. 1.1.0, an open-ended forensic imaging tool
+ * Copyright (C) 2013-2020, Free Software Foundation, Inc.
+ * written by Paolo Bertasi, Nicola Zago and Hans-Joachim Michl
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- * 
+ *
  */
 
 #ifndef _FASTDD_PARTITIONS_H
@@ -45,7 +45,7 @@ class part {
         stringstream ss;
         ss << nome_c << idx;
         nome = ss.str();
-        
+
         is_bootable = (m[0]==0x80);
         type = m[4];
 
@@ -59,7 +59,7 @@ class part {
         stringstream ss;
         ss << nome_c << idx;
         nome = ss.str();
-        
+
         is_bootable = (m[0]==0x80);
         type = m[4];
 
@@ -88,29 +88,29 @@ class partition_manager {
     bool error;
     int last_id;
     char *name;
-    
+
     public:
     partition_manager() : next_byte_needed(0), limit_known(0) { name = NULL; error=false;}
-    
-    partition_manager(const char *nome) : next_byte_needed(0), limit_known(0) { 
+
+    partition_manager(const char *nome) : next_byte_needed(0), limit_known(0) {
         int l = strlen(nome) + 1;
-        
+
         name = new char[l];
         for (int a=0; a<l; a++)
             name[a] = nome[a];
-            
+
         error=false;
     }
-    
+
     ~partition_manager() {
         if (name!=NULL)
             delete[] name;
     }
-    
+
     bool is_error() {
         return error;
     }
-    
+
     partition_manager& operator= (const partition_manager & other)
     {
         if (this != &other)
@@ -118,29 +118,29 @@ class partition_manager {
             next_byte_needed = other.next_byte_needed;
             limit_known = other.limit_known;
             partitions = other.partitions;
-            
+
             if (name!=NULL)
                 delete[] name;
-            
+
             int l = strlen(other.name)+1;   // copio anche 0 finale
             name = new char[l];
             for (int a=0; a<l; a++) {
                 name[a] = other.name[a];
             }
         }
-        
+
         return *this;
     }
-    
+
     int64_t update(unsigned char *block, uint64_t pos) {
      //   cout << "update pos:"<< pos << " needed:" << next_byte_needed << endl;
-        
+
         if (pos != next_byte_needed) return -1;
         if (block[510]!=0x55 || block[511]!=0xaa) {
             error = true;
             return -1;
         }
-        
+
         if (pos == 0) {
      //       cout << "-->" << endl;
             for (int a=0; a<4; a++) {			// leggo le partizioni primarie
@@ -150,16 +150,16 @@ class partition_manager {
                 temp.blocks<<=9;
                 if (temp.type == 0)
                     break;
-                
+
                 partitions.push_back(temp);
-                
+
                 if (partitions[a].type == 0x5 || partitions[a].type == 0xf || partitions[a].type == 0x85) {
                     next_byte_needed = partitions[a].start_block;
                     offset_ebr = partitions[a].start_block>>9;
                     break;
                 }
             }
-            
+
             if (next_byte_needed==0)
                 next_byte_needed = -1;
             last_id = 5;
@@ -175,32 +175,32 @@ class partition_manager {
                 return -1;
             }
             partitions.push_back(temp);
-            
+
             part temp2(block+462, offset_ebr);
             temp2.start_block<<=9;
             temp2.end_block<<=9;
             temp2.blocks<<=9;
-            
+
             if (temp2.type == 0x5 || temp2.type == 0xf || temp2.type == 0x85)
                 next_byte_needed = temp2.start_block;
             else
                 next_byte_needed = -1;
         }
-        
+
     /*    for (int a=0; a<partitions.size(); a++) {
             cout << partitions[a].nome << " " << partitions[a].start_block << " " << partitions[a].end_block << endl;
         }*/
-        
+
         return next_byte_needed;
     }
-    
+
     int64_t next_needed() { return next_byte_needed; }
-    
+
     string get_partition_at(uint64_t pos) {
       //  cout << "get pos:"<< pos << " needed:" << next_byte_needed << endl;
-        
+
         if (error) return " ";
-        
+
         for (int a=partitions.size()-1; a>=0; a--) {
             if (pos > (partitions[a].end_block)) {
                 stringstream ss;
@@ -210,12 +210,12 @@ class partition_manager {
             if (pos<=(partitions[a].end_block) && pos >= (partitions[a].start_block))
                 return partitions[a].nome;
         }
-        
+
         stringstream ss;
         ss << "unallocate before " << partitions[0].nome;
         return ss.str();
     }
-    
+
     vector<part> get_partitions() {
         return partitions;
     }
@@ -225,13 +225,13 @@ string *partition_types;
 
 void load_partition_types() {
     partition_types = new string[256];
-    
+
     for (int i=0; i<256; i++) {
         stringstream ss;
         ss << "invalid code " << i;
         partition_types[i] = ss.str();
     }
-    
+
     partition_types[0x00] = "Empty partition";
     partition_types[0x01] = "FAT12";
     partition_types[0x02] = "XENIX root";

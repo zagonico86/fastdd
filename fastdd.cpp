@@ -1,22 +1,22 @@
 /*
- * fastdd, v. 1.0.0, an open-ended forensic imaging tool
- * Copyright (C) 2013, Free Software Foundation, Inc.
- * written by Paolo Bertasi and Nicola Zago
- * 
+ * fastdd, v. 1.1.0, an open-ended forensic imaging tool
+ * Copyright (C) 2013-2020, Free Software Foundation, Inc.
+ * written by Paolo Bertasi, Nicola Zago and Hans-Joachim Michl
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- * 
+ *
  */
 #include <iostream>
 #include <fstream>
@@ -69,10 +69,10 @@ class progress_bar {
     uint64_t s_off, e_off, curr_pos;
     int s_o, e_o, c_o;
     string barra;
-    
+
     public:
     progress_bar() { }
-    
+
     progress_bar(uint64_t start_offset, uint64_t end_offset) {
         s_off = start_offset;
         e_off = end_offset;
@@ -81,41 +81,41 @@ class progress_bar {
         e_o = 51;
         barra = "|                                                  |";
     }
-    
+
     string get_barra() {
         stringstream ss;
-        
+
         int perc = (curr_pos - s_off)*100 / (e_off-s_off);
         ss << barra << setw(5) << perc << "% ";
-        
+
         struct timeval t_2;
         gettimeofday(&t_2, NULL);
         uint64_t t = t_2.tv_sec-t_start/1000000;
-        
+
         t = t * (e_off-curr_pos) / (curr_pos - s_off);
-        
+
         int sec = t%60;
         t/=60;
         int min = t%60;
         int h = t/60;
-        
+
         ss << " (" << h << ":" << setw(2) << setfill('0')<< min << ":" << setw(2) << setfill('0')<< sec << " sec. left)";
-        
+
         return ss.str();
     }
-    
+
     void add_pos(uint64_t n) {
         curr_pos += n;
         c_o = (curr_pos - s_off) * 50 / (e_off - s_off);
-        
+
         for (int a=1; a<c_o+1; a++)
             if (barra[a]==' ') barra[a]='=';
     }
-    
+
     void add_err(uint64_t offset) {
         offset = (offset - s_off) * 50 / (e_off - s_off);
         if (offset==0) offset=1;
-        
+
         switch (barra[offset]) {
             case 'x':
                 barra[offset] = 'X';
@@ -182,7 +182,7 @@ void init_default_settings() {
 int64_t init_read_suffixed_number(string number) {
     int64_t suffix = 1;
     int start=0, end=number.size();
-    
+
     int64_t suf = 1;
     // detect suffix by map hum_str2int
     if (end-start>1 && number[number.size()-1] > '9' && number[number.size()-2] > '9') {
@@ -193,7 +193,7 @@ int64_t init_read_suffixed_number(string number) {
         suf = hum_str2int[number.substr(number.size()-1,1)];
         end--;
     }
-        
+
     if (suf==0) {
         cerr << program_name << ": error: unknown suffix in '" << number << "'\n";
         exit(-1);
@@ -210,7 +210,7 @@ int64_t init_read_suffixed_number(string number) {
     }
 
     num = suffix*num;
-    
+
     return num;
 }
 
@@ -279,7 +279,7 @@ void init_read_flag(string flag) {
         for (int i=0; i<modules.size(); i++) {
             if (modules[i]->is_flag(flag)) {
                 bool ok = modules[i]->set_flag(flag);
-                
+
                 if (ok)
                     return;
                 else {
@@ -288,7 +288,7 @@ void init_read_flag(string flag) {
                 }
             }
         }
-        
+
         cerr << program_name << ": error: unknown flag '" << flag << "'." << endl;
         exit(-1);
     }
@@ -298,7 +298,7 @@ void init_read_flag(string flag) {
 void add_to_vector(vector<string> &a_vec, string right) {
     replace( right.begin(), right.end(), ',', ' ');
     istringstream in(right, istringstream::in);
-    
+
     while (in.good()) {
         string temp;
         in >> temp;
@@ -309,18 +309,18 @@ void add_to_vector(vector<string> &a_vec, string right) {
 /** decodifica un operando */
 void init_read_operand(string op) {
     const char *op_c = op.c_str();
-    
+
     int i=0;
     while (i<op.length() && op_c[i] != 0 && op_c[i] != '=') i++;
-    
+
     if (i==op.length() || op_c[i]==0 || op_c[i+1]==0) {
         cerr << program_name << ": invalid operand '" << op << "'\n";
         exit(1);
     }
-    
+
     string left = op.substr(0,i);
     string right = op.substr(i+1, op.size()-i-1);
-    
+
     if (!left.compare("if")) {
         settings.input_file_name = right;
     }
@@ -333,7 +333,7 @@ void init_read_operand(string op) {
             exit(1);
         }
         settings.bs = init_read_suffixed_number(right);
-        
+
         if (settings.bs & 511)      // disable O_DIRECT if bs%512 != 0
             settings.is_direct_i = settings.is_direct_o = 0;
     }
@@ -343,7 +343,7 @@ void init_read_operand(string op) {
             exit(1);
         }
         settings.ibs = init_read_suffixed_number(right);
-        
+
         if (settings.ibs & 511)      // disable O_DIRECT if bs%512 != 0
             settings.is_direct_i = settings.is_direct_o = 0;
     }
@@ -353,7 +353,7 @@ void init_read_operand(string op) {
             exit(1);
         }
         settings.obs = init_read_suffixed_number(right);
-        
+
         if (settings.obs & 511)      // disable O_DIRECT if bs%512 != 0
             settings.is_direct_i = settings.is_direct_o = 0;
     }
@@ -373,14 +373,14 @@ void init_read_operand(string op) {
     }
     else if (!left.compare("log")) {
         settings.log_file = right;
-        settings.ofstream_log_file.open(right.c_str(), ios_base::out ); 
+        settings.ofstream_log_file.open(right.c_str(), ios_base::out );
         settings.is_verbose = true;
         if (!(settings.ofstream_log_file.is_open())) {
             cerr << program_name << ": error: error while opening log file '" << right << "'\n";
             exit(1);
         }
         settings.ofstream_log_file << "fastdd v. " << VERSION_MAJOR << "." << VERSION_MINOR << "." << VERSION_REVISION << " (last modified: " << __TIMESTAMP__ << ", compiled " << __TIME__ << ")\n";
-        
+
         struct tm *local;
         time_t t;
         t = time(NULL);
@@ -396,7 +396,7 @@ void init_read_operand(string op) {
     }
     else if (!left.compare("hash-blocks-save")) {
         settings.is_md_blocks_save = true;
-        
+
         settings.ofstream_md.open(right.c_str(), ios_base::out);
         if (!(settings.ofstream_md.is_open())) {
             cerr << program_name << ": error: opening blocks hash output file '"<< right <<"'\n";
@@ -421,7 +421,7 @@ void init_read_operand(string op) {
         for (int i=0; i<modules.size(); i++) {
             if (modules[i]->is_operand(left)) {
                 bool ok = modules[i]->set_operand(left,right);
-                
+
                 if (ok)
                     return;
                 else {
@@ -430,7 +430,7 @@ void init_read_operand(string op) {
                 }
             }
         }
-        
+
         cerr << program_name << ": error: unknow operand '" << left << "'\n";
         exit(-1);
     }
@@ -442,19 +442,19 @@ void init_read_arguments_settings(int argc, char *argv[]) {
 
     program_name = argv[0];
 
-    if (find(args.begin(), args.end(), "--help")!=args.end() || 
+    if (find(args.begin(), args.end(), "--help")!=args.end() ||
         find(args.begin(), args.end(), "-h")!=args.end()) {
         help();
         exit(0);
     }
-    
+
     if (find(args.begin(), args.end(), "--version")!=args.end()) {
         version();
         exit(0);
     }
-    
+
     init_translation_maps();
-    
+
     ////////////////// leggo operandi e flags
     for (int i=1; i<argc; i++) {
         if (args[i][0]=='-') init_read_flag(args[i]);
@@ -480,7 +480,7 @@ void init_read_arguments_settings(int argc, char *argv[]) {
         cerr << program_name << ": obs must be a multiple of ibs or viceversa.\n";
         exit(1);
     }
-    
+
     if ((settings.is_verbose || settings.is_debug) && !(settings.ofstream_log_file.is_open())) {
         cerr << program_name << ": log=FILE must be specified when --debug or --verbose are enabled.\n";
         exit(1);
@@ -494,7 +494,7 @@ void init_read_arguments_settings(int argc, char *argv[]) {
     /////// hash di default
     if (settings.md_files.size() < 1) settings.md_files.push_back("md5");
     if (settings.md_blocks.size() < 1) settings.md_blocks.push_back("md5");
-    
+
     if (settings.is_debug) {
         settings.ofstream_log_file << "OPERANDS:\n";
         settings.ofstream_log_file << "\tinput: " << settings.input_file_name << endl;
@@ -512,19 +512,19 @@ void init_read_arguments_settings(int argc, char *argv[]) {
         settings.ofstream_log_file << "\t\t is file ready: " << settings.ofstream_md.is_open() << endl;
         settings.ofstream_log_file << "\tlog file: "<< settings.log_file << endl;
         settings.ofstream_log_file << "\t\tis file ready: "<< settings.ofstream_log_file.is_open() << endl;
-        
+
         settings.ofstream_log_file << "\thashes for blocks: ";
         for (int i=0; i<settings.md_blocks.size(); i++)
             settings.ofstream_log_file << settings.md_blocks[i] << " ";
         settings.ofstream_log_file << endl;
-        
+
         settings.ofstream_log_file << "\thashes for files: ";
         for (int i=0; i<settings.md_files.size(); i++)
             settings.ofstream_log_file << settings.md_files[i] << " ";
         settings.ofstream_log_file << endl;
-        
+
         settings.ofstream_log_file << "\treading attempts: " << settings.reading_attempts << endl;
-        
+
         settings.ofstream_log_file << "\nFLAGS:\n";
         settings.ofstream_log_file << "\tmd file in: " << settings.is_md_file_in << endl;
         settings.ofstream_log_file << "\tmd files out: " << settings.is_md_files_out << endl;
@@ -569,7 +569,7 @@ void init_buffers() {
         buffer[i].is_full = false;
         buffer[i].is_empty = true;
         buffer[i].is_last = false;
-        
+
         pthread_mutex_init(&(buffer[i].buffer_mutex), NULL);
         pthread_cond_init (&(buffer[i].is_not_full), NULL);
         buffer[i].is_not_empty = (pthread_cond_t *) malloc(MAX(settings.output_file_name.size(), 1) * sizeof(pthread_cond_t));
@@ -577,36 +577,36 @@ void init_buffers() {
         buffer[i].writer_active = 0;
         buffer[i].active = (bool *) malloc(MAX(settings.output_file_name.size(), 1)* sizeof(bool));
         buffer[i].already_write = (bool *) malloc(MAX(settings.output_file_name.size(), 1) * sizeof(bool));       // how many writers have finished this buffer
-        
+
         for (int j=0; j<MAX(settings.output_file_name.size(), 1); j++) {
             pthread_cond_init (&(buffer[i].is_not_empty[j]), NULL);
             buffer[i].active[j] = true;
             buffer[i].already_write[j] = false;
         }
-    
+
         buffer[i].tot_digests = 0;
         if (settings.is_md_blocks_check || settings.is_md_blocks_save) {
             buffer[i].tot_digests = settings.md_blocks.size();
-            buffer[i].ctx = (EVP_MD_CTX *) malloc(sizeof(EVP_MD_CTX) * buffer[i].tot_digests);
+            buffer[i].ctx = (EVP_MD_CTX **) malloc(sizeof(EVP_MD_CTX *) * buffer[i].tot_digests);
             buffer[i].digest_type = (const EVP_MD **) malloc(sizeof(const EVP_MD *) * buffer[i].tot_digests);
             buffer[i].hash = (unsigned char **) malloc(sizeof(unsigned char *) * buffer[i].tot_digests);
             buffer[i].hash_len = (unsigned int *) malloc(buffer[i].tot_digests * sizeof(unsigned int) );
-            
+
             for (int j=0; j<buffer[i].tot_digests; j++) {
                 buffer[i].digest_type[j] = EVP_get_digestbyname(settings.md_blocks[j].c_str());
-                        
+
                 if(!(buffer[i].digest_type[j])) {
                         cerr << program_name << ": unknown message digest "<< settings.md_blocks[j] << endl;
                         exit(1);
                 }
-                EVP_MD_CTX_init(&(buffer[i].ctx[j]));
-                EVP_DigestInit_ex(&(buffer[i].ctx[j]), buffer[i].digest_type[j], NULL);
-                
+                buffer[i].ctx[j] = EVP_MD_CTX_create();
+                EVP_DigestInit_ex(buffer[i].ctx[j], buffer[i].digest_type[j], NULL);
+
                 buffer[i].hash[j] = (unsigned char *) malloc(EVP_MAX_MD_SIZE * sizeof(unsigned char));
                 memset(buffer[i].hash[j], 0, EVP_MAX_MD_SIZE);
             }
         }
-        
+
         buffer[i].the_other_buffer = &buffer[(i+1)%tot];
     }
 }
@@ -614,22 +614,22 @@ void init_buffers() {
 /** Determine if file is a character device */
 bool is_char_dev(const char *name) {
     struct stat sb;
-    
+
     int fd = open(name, O_RDWR|O_CREAT|O_LARGEFILE, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);    // se esiste con questi flag non lo modifica
     if (fd == -1) {
         cerr  << program_name << ": error opening " << name << " (" << strerror(errno) << ")" << endl;
         exit(1);
     }
-    
+
     if (fstat(fd, &sb) == -1) {
         cerr  << program_name << ": error getting information for " << name << " (" << strerror(errno) << ")" << endl;
         exit(1);
     }
-    
+
     if ((sb.st_mode & S_IFMT) == S_IFREG || (sb.st_mode & S_IFMT) == S_IFBLK) {     // regular file or block device
         return false;
     }
-    
+
     close(fd);
     // char device
     return true;
@@ -638,12 +638,12 @@ bool is_char_dev(const char *name) {
 /** Determine size of input file */
 int64_t get_file_size(int fd) {
     struct stat sb;
-    
+
     if (fstat(fd, &sb) == -1) {
         cerr  << program_name << ": error getting size (" << strerror(errno) << ")" << endl;
         exit(1);
     }
-    
+
     if ((sb.st_mode & S_IFMT) == S_IFREG) {     // regular file
         return sb.st_size;
     }
@@ -651,29 +651,29 @@ int64_t get_file_size(int fd) {
         int64_t numblocks=0;
 
         ioctl(fd, BLKGETSIZE, &numblocks);
-        
+
         return numblocks<<9;
     }
-    
+
     // char device
     return -1;
 }
 
 bool is_block_device(int fd) {
     struct stat sb;
-    
+
     if (fstat(fd, &sb) == -1) {
         cerr << program_name << ": error getting device type (" << strerror(errno) << ")" << endl;
         exit(1);
     }
-    
+
     if ((sb.st_mode & S_IFMT) == S_IFREG) {     // regular file
         return false;
     }
     else if ((sb.st_mode & S_IFMT) == S_IFBLK) {    // block device
         return true;
     }
-    
+
     // char device
     return false;
 }
@@ -683,7 +683,7 @@ fastdd_file_t *init_input_file() {
 
     if (settings.input_file_name.length() > 0) {                  // apertura del file di input
         ris->file_name = settings.input_file_name.c_str();
-        
+
         if (settings.is_direct_i && is_char_dev(ris->file_name))
             settings.is_direct_i = false;
 
@@ -692,7 +692,7 @@ fastdd_file_t *init_input_file() {
             cerr <<  program_name << ": error while opening \""<< ris->file_name <<"\"\n(" << strerror(errno) << ")\n";
             exit(1);
         }
-        
+
         ris->total_size_in_byte = get_file_size(ris->file_descriptor);
         if (settings.is_verbose) {
             if (ris->total_size_in_byte >= 0)
@@ -700,7 +700,7 @@ fastdd_file_t *init_input_file() {
             else
                 settings.ofstream_log_file << "input size: is a character device" << endl;
         }
-        
+
         // prima dello skip controllo di poterlo fare
         ris->skip_in_byte = (uint64_t)settings.ibs*settings.skip;
         if (ris->total_size_in_byte >= 0 && ris->skip_in_byte >= ris->total_size_in_byte) {
@@ -708,7 +708,7 @@ fastdd_file_t *init_input_file() {
                 << (uint64_t)settings.ibs*settings.skip  << " " << ris->total_size_in_byte << ")\n";
             exit(1);
         }
-        
+
         // se é una device a blocchi uso lseek
         if (ris->total_size_in_byte >= 0) {
             ris->current_position = 0;
@@ -722,23 +722,23 @@ fastdd_file_t *init_input_file() {
                 ris->current_position += read(ris->file_descriptor, (void *) (buffer[i].buffer), settings.ibs);
             }
         }
-    
+
         if (errno!=0) {
             cerr << program_name << ": unable to reach block "<<settings.skip<<" (byte "<< ((uint64_t)settings.ibs*settings.skip) << ") of input file\n";
             cerr << "reached byte " << ris->current_position << " (" << strerror(errno) << ")\n";
             exit(1);
         }
-        
+
         // disabilito progress bar se non so la lunghezza
         if (ris->total_size_in_byte<0 && settings.count < 0) {
             settings.is_progress_bar = false;
         }
-        
-        if (settings.count < 0) 
+
+        if (settings.count < 0)
             ris->byte_to_read = -1;
         else
             ris->byte_to_read = ((uint64_t)settings.count)*settings.ibs;
-        
+
         ris->byte_read = 0;
 
         if (settings.is_verbose) {
@@ -748,23 +748,23 @@ fastdd_file_t *init_input_file() {
     else {
         ris->file_name = "stdin";
         ris->file_descriptor = 0;	// stdin
-        
+
         ris->current_position = 0;
         for (int i=0; i<settings.skip; i++) {
             ris->current_position += read(ris->file_descriptor, (void *) (buffer[i].buffer), settings.ibs);
         }
-    
+
         if (errno!=0) {
             cerr << program_name << ": unable to reach block "<<settings.skip<<" (byte "<< settings.ibs*settings.skip << ") of input file\n";
             cerr << "reached byte " << ris->current_position << " (" << strerror(errno) << ")\n";
             exit(1);
         }
-        
+
         if (ris->total_size_in_byte<0) {
             settings.is_progress_bar = false;
         }
 
-        if (settings.count < 0) 
+        if (settings.count < 0)
             ris->byte_to_read = -1;
         else
             ris->byte_to_read = ((uint64_t)settings.count)*settings.ibs;
@@ -774,31 +774,31 @@ fastdd_file_t *init_input_file() {
         }
     }
     ris->b_compl = ris->b_part = 0;
-    
+
     ris->tot_digests = 0;
     if (settings.is_md_file_in) {
         ris->tot_digests = settings.md_files.size();
-        
-        ris->ctx = (EVP_MD_CTX *) malloc(ris->tot_digests * sizeof(EVP_MD_CTX) );
+
+        ris->ctx = (EVP_MD_CTX **) malloc(ris->tot_digests * sizeof(EVP_MD_CTX *) );
         ris->digest_type = (const EVP_MD **) malloc(ris->tot_digests * sizeof(const EVP_MD *) );
         ris->hash = (unsigned char **) malloc(ris->tot_digests * sizeof(unsigned char *) );
         ris->hash_len = (unsigned int *) malloc(ris->tot_digests * sizeof(unsigned int) );
-        
+
         for (int i=0; i<ris->tot_digests; i++) {
             ris->digest_type[i] = EVP_get_digestbyname(settings.md_files[i].c_str());
-            
+
             if(!(ris->digest_type[i])) {
                     cerr << program_name << ": unknown message digest "<< settings.md_files[i] << endl;
                     exit(1);
             }
-            EVP_MD_CTX_init(&(ris->ctx[i]));
-            EVP_DigestInit_ex(&(ris->ctx[i]), ris->digest_type[i], NULL);
-            
+            ris->ctx[i] = EVP_MD_CTX_create();
+            EVP_DigestInit_ex(ris->ctx[i], ris->digest_type[i], NULL);
+
             ris->hash[i] = (unsigned char *) malloc(EVP_MAX_MD_SIZE * sizeof( unsigned char));
             memset(ris->hash[i], 0, EVP_MAX_MD_SIZE);
         }
     }
-    
+
     return ris;
 }
 
@@ -820,14 +820,14 @@ fastdd_file_t *init_output_file() {
         ris[0].current_position = 0;
         ris[0].byte_read = 0;
         ris[0].is_direct_o = 0;
-        
+
         if (settings.is_parallel) {
             for (int j=0; j<TOT_BUFFERS; j++)
                 buffer[j].active[0] = true;
         }
         else
             buffer[0].active[0] = true;
-            
+
         if (settings.is_verbose)
             settings.ofstream_log_file << "stdout setted as output file, possible seek options have been ignored." << endl;
     }
@@ -845,7 +845,7 @@ fastdd_file_t *init_output_file() {
                 cerr << program_name << ": error: opening output file \""<< ris[i].file_name <<"\".\n" << strerror(errno) << endl;
                 exit(1);
             }
-            
+
             ris[i].total_size_in_byte = get_file_size(ris[i].file_descriptor);
             if (settings.is_verbose) {
                 if (ris[i].total_size_in_byte >= 0)
@@ -853,22 +853,22 @@ fastdd_file_t *init_output_file() {
                 else
                     settings.ofstream_log_file << "output file "<<ris[i].file_name << " size: is a character device" << endl;
             }
-            
+
             if ((settings.is_md_blocks_check || settings.is_md_files_out) && ris[i].total_size_in_byte<0) {
                 cerr << program_name << ": error: hash check is not compatible with characters output device '" << ris[i].file_name << "'" << endl;
                 exit(1);
             }
-            
+
             if (ris[i].total_size_in_byte<0 && settings.seek != 0) {
                 cerr << program_name << ": error: seek is not compatible with characters output device '" << ris[i].file_name << "'" << endl;
                 exit(1);
             }
-            
+
             if (is_block_device(ris[i].file_descriptor) && settings.seek*settings.obs >= ris[i].total_size_in_byte) {
                 cerr << program_name << ": error: end of device " << ris[i].file_name << " reached while seeking first " << settings.seek << " blocks" << endl;
                 exit(1);
             }
-            
+
             ris[i].current_position = 0;
             if (ris[i].total_size_in_byte>=0  && settings.seek != 0) {
                 ris[i].current_position = lseek(ris[i].file_descriptor, settings.seek*settings.obs, SEEK_CUR);
@@ -879,33 +879,33 @@ fastdd_file_t *init_output_file() {
             }
 
             ris[i].byte_read = 0;
-            
+
             ///////////////////////////////
             ris[i].tot_digests = 0;
             if (settings.is_md_files_out) {
                 ris[i].tot_digests = settings.md_files.size();
-                
-                ris[i].ctx = (EVP_MD_CTX *) malloc(ris[i].tot_digests * sizeof(EVP_MD_CTX) );
+
+                ris[i].ctx = (EVP_MD_CTX **) malloc(ris[i].tot_digests * sizeof(EVP_MD_CTX *) );
                 ris[i].digest_type = (const EVP_MD **) malloc(ris[i].tot_digests * sizeof(const EVP_MD *) );
                 ris[i].hash = (unsigned char **) malloc(ris[i].tot_digests * sizeof(unsigned char *) );
                 ris[i].hash_len = (unsigned int *) malloc(ris[i].tot_digests * sizeof(unsigned int) );
-                
+
                 for (int j=0; j<ris[i].tot_digests; j++) {
                     ris[i].digest_type[j] = EVP_get_digestbyname(settings.md_files[j].c_str());
-                    
+
                     if(!(ris[i].digest_type[j])) {
                             cerr << program_name << ": unknown message digest "<< settings.md_files[j] << endl;
                             exit(1);
                     }
-                    EVP_MD_CTX_init(&(ris[i].ctx[j]));
-                    EVP_DigestInit_ex(&(ris[i].ctx[j]), ris[i].digest_type[j], NULL);
-                    
+                    ris[i].ctx[j] = EVP_MD_CTX_create();
+                    EVP_DigestInit_ex(ris[i].ctx[j], ris[i].digest_type[j], NULL);
+
                     ris[i].hash[j] = (unsigned char *) malloc(EVP_MAX_MD_SIZE * sizeof(unsigned char));
                     memset(ris[i].hash[j], 0, EVP_MAX_MD_SIZE);
                 }
             }
             //////////////////////////////////
-            
+
             ris[i].b_compl = ris[i].b_part = 0;
             if (settings.is_parallel) {
                 for (int j=0; j<TOT_BUFFERS; j++)
@@ -915,7 +915,7 @@ fastdd_file_t *init_output_file() {
                 buffer[0].active[i] = true;
         }
     }
-    
+
     return ris;
 }
 
@@ -924,37 +924,37 @@ string num2str(int64_t n, int base, int length, char fill) {
     ss << setbase(base) << setw(length) <<setfill(fill) << n;
     string ris;
     ris = ss.str();
-    
+
     return ris;
 }
 int64_t read_blocks(int file_descriptor, uint64_t pos_file, buffer_t *buff, uint64_t pos_buff, uint64_t da_leggere) {
     int64_t letti_tot, letti_cur;
     int64_t bytes_read = 0;
-    
+
     if (settings.is_verbose) {
         settings.ofstream_log_file << "reading block " << num2str(pos_file,16,16,'0') << "-"
             << num2str(pos_file+da_leggere,16,16,'0') << " sector-by-sector" << endl;
 //         cerr << "reading block " << num2str(pos_file,16,16,'0') << "-"
 //             << num2str(pos_file+da_leg,16,16,'0') << " with 512-bytes step" << endl;
     }
-    
+
     lseek(file_descriptor, pos_file, SEEK_SET);
     for (int b=0; b<da_leggere; b+=512) {
  //       cerr << (pos_file+b) << endl;
         int attempts = settings.reading_attempts;
-        
+
         letti_tot = letti_cur = read(file_descriptor, buff->buffer+(pos_buff+b), 512);
         while (letti_cur>0 && letti_tot<512) {
             letti_cur = read(file_descriptor, buff->buffer+(pos_buff+b+letti_tot), 512-letti_tot);
             letti_tot+=letti_cur;
         }
-        
+
         if (letti_cur==0) {
             buff->is_last = true;
             bytes_read+=b+letti_tot;
             return bytes_read;
         }
-        
+
         if (letti_cur==-1) {
             while (letti_cur==-1 && --attempts > 0) {
                 letti_tot=0;
@@ -969,7 +969,7 @@ int64_t read_blocks(int file_descriptor, uint64_t pos_file, buffer_t *buff, uint
                 lseek(file_descriptor, pos_file+b, SEEK_SET);
                 letti_cur = read(file_descriptor, buff->buffer+(pos_buff+b), 512);
             }
-            
+
             if (letti_cur==-1) {
                 pb.add_err(pos_file+b);
                 if (settings.is_verbose) {
@@ -982,25 +982,25 @@ int64_t read_blocks(int file_descriptor, uint64_t pos_file, buffer_t *buff, uint
                 memset((void *) (buff->buffer+(pos_buff+b)), 0 , 512);
                 lseek(file_descriptor, pos_file+b+512, SEEK_SET);
             }
-            
+
             letti_tot=512;
         }
-        
+
         bytes_read += letti_tot;
     }
-    
+
     return bytes_read;
 }
 
 /* leggo a blocchi di reread-bs */
 int64_t read_slow(int file_descriptor, uint64_t pos_file, buffer_t *buff, uint64_t pos_buff, uint64_t da_leggere) {
     lseek(file_descriptor, pos_file, SEEK_SET);
-    
+
     if (settings.is_verbose) {
         settings.ofstream_log_file << "switching to buffer size " << settings.reread_bs << endl;
     //    cerr << "switching to buffer size " << settings.reread_bs << endl;
     }
-    
+
     int64_t bytes_read = 0;
     for (int64_t a=0; a<da_leggere; a+=settings.reread_bs) {
   //      cerr << pos_file << endl;
@@ -1011,13 +1011,13 @@ int64_t read_slow(int file_descriptor, uint64_t pos_file, buffer_t *buff, uint64
             letti_cur = read(file_descriptor, buff->buffer+(pos_buff+a+letti_tot), da_leg-letti_tot);
             letti_tot+=letti_cur;
         }
-        
+
         if (letti_cur==0) {
             buff->is_last = true;
             bytes_read+=letti_tot;
             return bytes_read;
         }
-        
+
         if (letti_cur==-1) {        // leggo 'piano'
             if (settings.is_verbose) {
                 settings.ofstream_log_file << "error reading block " << num2str(pos_file,16,16,'0') << "-"
@@ -1025,7 +1025,7 @@ int64_t read_slow(int file_descriptor, uint64_t pos_file, buffer_t *buff, uint64
           //      cerr << "error reading block " << num2str(pos_file,16,16,'0') << "-"
            //         << num2str(pos_file+da_leg,16,16,'0') << " (" << strerror(errno) << ")" << endl;
             }
-            
+
             letti_tot = read_blocks(file_descriptor, pos_file, buff, pos_buff+a, da_leg);
             if (settings.is_verbose)
                     settings.ofstream_log_file << "returning to " << settings.reread_bs << " byte buffer size" <<  endl;
@@ -1040,21 +1040,21 @@ int64_t read_slow(int file_descriptor, uint64_t pos_file, buffer_t *buff, uint64
 
 void *thread_read(void *arg) {
     fastdd_file_t *fi = (fastdd_file_t *) arg;
-    
+
     buffer_t *buff = buffer;
-    
+
     int64_t bs= settings.bs;
     int64_t ibs= settings.ibs;
-    int64_t count= settings.count;    
-    
+    int64_t count= settings.count;
+
     pb = progress_bar(fi->skip_in_byte,
         ( (fi->byte_to_read > 0) ? (fi->skip_in_byte+fi->byte_to_read) : fi->total_size_in_byte ) );
     int64_t last_update=-100000000;
-    
+
  //   struct timeval t_1;
     int64_t next_needed;
     pm = partition_manager(fi->file_name);
-    
+
     int continue_on_error=-1;   // -1=not set, 0=no, 1=yes
     if (settings.ignore_module_error) continue_on_error=1;
  //   int64_t t1=t_start, t2, t3;
@@ -1065,7 +1065,7 @@ void *thread_read(void *arg) {
  //           cerr << "read: aspetto sia vuoto" << endl;
             pthread_cond_wait (&buff->is_not_full, &buff->buffer_mutex);
         }
-        
+
         if (buff->is_last) {
             pthread_mutex_unlock(&buff->buffer_mutex);
             break;
@@ -1074,11 +1074,11 @@ void *thread_read(void *arg) {
 
         int64_t tot_read = 0;
         int64_t bytes_read, temp=1;
-        
+
         //memset((void *) buff->buffer, 0, bs);
-        
+
         int64_t current_blocks = fi->b_part+fi->b_compl;
-        
+
         for (int j=0; (count<0 || (count>=0 && fi->b_compl+fi->b_part<count)) && j<bs; j+=bytes_read) {
             int64_t da_leggere = MIN(ibs,bs-tot_read);
        //     gettimeofday(&t_1, NULL);
@@ -1096,7 +1096,7 @@ void *thread_read(void *arg) {
                 }
                 bytes_read += temp;
             }
-            
+
             if (temp==-1) {
                 if (settings.is_verbose) {
                     settings.ofstream_log_file << program_name << ": error reading block " <<
@@ -1114,14 +1114,14 @@ void *thread_read(void *arg) {
                         bytes_read = read_slow(fi->file_descriptor, fi->current_position+j, buff, j, da_leggere);
                     else
                         bytes_read = read_blocks(fi->file_descriptor, fi->current_position+j, buff, j, da_leggere);
-                                    
+
                     if (settings.is_verbose)
                         settings.ofstream_log_file << "returning to normal buffer size" <<  endl;
                 }
                 else {
                     lseek(fi->file_descriptor, fi->current_position+j+da_leggere, SEEK_SET);
                     memset(buff->buffer+j, 0, da_leggere);
-                    
+
                     bytes_read=da_leggere;
                     pb.add_err(fi->current_position+j);
                     if (settings.is_verbose) {
@@ -1132,46 +1132,46 @@ void *thread_read(void *arg) {
                         << '\r' << "unable to read block " << num2str(fi->current_position+j,16,16,'0') << "-"
                             << num2str(fi->current_position+j+da_leggere,16,16,'0') << " (" << strerror(errno) << ")" << endl;
                 }
-                
+
                 if (bytes_read) {
-                    if (!buff->is_last) 
+                    if (!buff->is_last)
                         temp=1;
                 }
                 else buff->is_last = true;
             }
-                
+
             if (bytes_read==ibs)
                 fi->b_compl++;
             else if (bytes_read)
                 fi->b_part++;
-                
+
             tot_read+=bytes_read;
-            
+
             if ((count>0 && fi->b_compl+fi->b_part >= count) || !bytes_read) {
                 buff->is_last = true;
             }
-            
+
             if (buff->is_last)
                 break;
         }
-        
+
         buff->length = tot_read;
         buff->is_full = true;
         buff->is_empty = false;
         //cerr << "read: letti " << buff->length << endl;
-        
+
         ///////////////////////////////////////// MD
         if (settings.is_md_blocks_save) {           // calcolo e scrivo su file i digest dei blocchi
-            EVP_MD_CTX mdctx;
+            EVP_MD_CTX *mdctx;
             unsigned char md_value[EVP_MAX_MD_SIZE];
             unsigned int md_len;
-            
+
             for (int i=0; i<tot_read; i+=ibs) {
                 for (int i1=0; i1<buff->tot_digests; i1++) {
-                    EVP_MD_CTX_init(&mdctx);
-                    EVP_DigestInit_ex(&mdctx, buff->digest_type[i1], NULL);
-                    EVP_DigestUpdate(&mdctx, buff->buffer+i, MIN(ibs,tot_read-i));
-                    EVP_DigestFinal_ex(&mdctx, md_value, &md_len);
+                    mdctx = EVP_MD_CTX_create();
+                    EVP_DigestInit_ex(mdctx, buff->digest_type[i1], NULL);
+                    EVP_DigestUpdate(mdctx, buff->buffer+i, MIN(ibs,tot_read-i));
+                    EVP_DigestFinal_ex(mdctx, md_value, &md_len);
                     stringstream ss;
                     for (int i2=0; i2<md_len; i2++) {
                         ss << setfill('0') << setw(2) << setbase(16) << (unsigned int) md_value[i2];
@@ -1187,20 +1187,20 @@ void *thread_read(void *arg) {
         // digest complessivo del file
         for (int i1=0; i1<fi->tot_digests; i1++) {
             if (settings.is_md_file_in) {
-                EVP_DigestUpdate(&(fi->ctx[i1]), buff->buffer, tot_read);
+                EVP_DigestUpdate(fi->ctx[i1], buff->buffer, tot_read);
             }
         }
-        
+
         // digest per il confronto
         for (int i1=0; i1<buff->tot_digests; i1++) {
             if (settings.is_md_blocks_check) {
-                EVP_MD_CTX_init(&buff->ctx[i1]);
-                EVP_DigestInit_ex(&buff->ctx[i1], buff->digest_type[i1], NULL);
-                EVP_DigestUpdate(&buff->ctx[i1], buff->buffer, tot_read);
-                EVP_DigestFinal_ex(&buff->ctx[i1], buff->hash[i1], &buff->hash_len[i1]);
+                buff->ctx[i1] = EVP_MD_CTX_create();
+                EVP_DigestInit_ex(buff->ctx[i1], buff->digest_type[i1], NULL);
+                EVP_DigestUpdate(buff->ctx[i1], buff->buffer, tot_read);
+                EVP_DigestFinal_ex(buff->ctx[i1], buff->hash[i1], &buff->hash_len[i1]);
             }
         }
-        
+
         //////////////////////////////// partition table
         if (settings.is_get_partition) {
             if (current_blocks==0)
@@ -1211,13 +1211,13 @@ void *thread_read(void *arg) {
             }
             if (pm.is_error()) settings.is_get_partition=false;
         }
-        
+
         // -------------------------------- use modules
         for (int i_mod=0; i_mod<modules.size(); i_mod++) {
             if (!modules[i_mod]->is_active()) continue;
 
             bool ok = modules[i_mod]->transform(buff);
-            
+
             if (!ok && continue_on_error<0) {
                 if (settings.is_verbose)
                     settings.ofstream_log_file << modules[i_mod]->get_name() << ": " << modules[i_mod]->get_error() << endl;
@@ -1242,11 +1242,11 @@ void *thread_read(void *arg) {
                 if (!continue_on_error) break;
             }
         }
-        
+
         // -------------------------------- fatto
         fi->current_position+=tot_read;
         fi->byte_read+=tot_read;
-        
+
         if (settings.is_progress_bar) {
             pb.add_pos(tot_read);
             if (fi->current_position - last_update >= 1048576) {
@@ -1261,18 +1261,18 @@ void *thread_read(void *arg) {
         }
 
         pthread_mutex_unlock(&buff->buffer_mutex);
-        
+
         if (buff->is_last) {
     //        cerr << "read: ----------------- LAST" << endl;
             break;
         }
-        
+
    //     cerr << "read: " << (fi->b_compl + fi->b_part) << endl;
         buff = buff->the_other_buffer;
     } while(true);
-    
+
   //  cerr << "read: esco" << endl;
-    
+
     pthread_exit(NULL);
 }
 
@@ -1292,9 +1292,9 @@ bool secure_next_buffer(buffer_t *buff, int id, bool close_thread) {
             buff = buff->the_other_buffer;
         }
     }
-    
+
     buff->already_write[id] = true;
-    
+
     // attenzione, qui non prendo il lock dell'altro buffer
 
     bool esci = true;           // hanno tutti terminato?
@@ -1303,11 +1303,11 @@ bool secure_next_buffer(buffer_t *buff, int id, bool close_thread) {
         if (buff->active[j]) esci = false;
         if (buff->active[j] && !buff->already_write[j]) buffer_ok=false;
     }
-    
+
     if (esci) {
         buff->is_last = true;
     }
-    
+
     if (esci || buffer_ok) {
         buff->length = 0;
         buff->is_empty = true;
@@ -1317,9 +1317,9 @@ bool secure_next_buffer(buffer_t *buff, int id, bool close_thread) {
         pthread_cond_signal(&buff->is_not_full);
     }
     // else non è l'ultimo, non deve vuotare il buffer
-    
+
     pthread_mutex_unlock(&buff->buffer_mutex);
-    
+
     return buff->is_last;
 }
 
@@ -1328,7 +1328,7 @@ void *thread_write(void *arg) {
     int id = fo->idx;
 
     buffer_t *buff = buffer;
-    
+
     unsigned char *local_buffer;
     if (settings.is_md_blocks_check || settings.is_md_files_out) {
         int t = posix_memalign( (void **) &(local_buffer), 512, settings.bs);
@@ -1351,13 +1351,13 @@ void *thread_write(void *arg) {
             pthread_exit(NULL);
         }
     }
-    
+
     int64_t bs= settings.bs;
     int64_t obs= settings.obs;
     int64_t count= settings.count;
  //   struct timeval t_1;
   //  int64_t t1=t_start, t2, t3;
-    
+
     do {
     //    cerr << fo->file_name << " aspetto" << endl;
         pthread_mutex_lock(&buff->buffer_mutex);
@@ -1371,9 +1371,9 @@ void *thread_write(void *arg) {
         }
         buff->writer_entered++;
         pthread_mutex_unlock(&buff->buffer_mutex);
-        
+
   //      cerr << fo->file_name << " dentro" << endl;
-        
+
         // --------------------------- riapri file senza o_direct se serve
         if (fo->is_direct_o && (buff->length&511)) {
             int oldflags = fcntl (fo->file_descriptor, F_GETFL, 0);
@@ -1385,8 +1385,8 @@ void *thread_write(void *arg) {
                 secure_next_buffer(buff, id, true);
                 pthread_exit(NULL);
             }
-            
-            
+
+
             oldflags &= ~O_DIRECT;
 
             oldflags = fcntl(fo->file_descriptor, F_SETFL, oldflags);
@@ -1397,11 +1397,11 @@ void *thread_write(void *arg) {
                 secure_next_buffer(buff, id, true);
                 pthread_exit(NULL);
             }
-            
+
             fo->is_direct_o = 0;
         //    cerr << fo->file_name << " -------------- riaperto" << endl;
         }
-        
+
         // ----------------------------- scrivo
         int64_t bytes_written = 0, temp;
         for (int64_t j=0; j<buff->length; j+=MIN(obs, buff->length-j)) {
@@ -1412,10 +1412,10 @@ void *thread_write(void *arg) {
           //  t3 = t_1.tv_sec*1000000+t_1.tv_usec;
          //   couttime << "write "<< (t2-t1) << " " << (t3-t2) << endl;
          //   t1=t3;
-            
+
             if (temp==-1)
                 exit(1);
-                
+
             if (temp==obs) {
              //   printf("%ld %ld %ld C\n",j,buff->length, temp);
                 fo->b_compl++;
@@ -1427,13 +1427,13 @@ void *thread_write(void *arg) {
             bytes_written += temp;
         }
     //    cerr << fo->file_name << " scritti " << bytes_written << endl;
-        
+
         // -------------------------------- rileggo
         if (settings.is_md_blocks_check || settings.is_md_files_out) {
             int64_t pos = lseek(fo->file_descriptor, -bytes_written, SEEK_CUR);	// torno a monte del buffer appena scritto
             int64_t current_read=0;
             memset((void *) local_buffer, 0, bs);
-            
+
             for (int t=0; t<buff->length; t+=MIN(obs, buff->length-t)) {
     //            cerr << ">>" << MIN(obs, buff->length-t) << endl;
                 int64_t t2 = read(fo->file_descriptor, local_buffer+t, MIN(obs, buff->length-t));
@@ -1443,7 +1443,7 @@ void *thread_write(void *arg) {
                         settings.ofstream_log_file << program_name << ": error: re-reading block "<<num2str(pos,16,16,'0')<<"-"
                             <<num2str(pos+MIN(obs, buff->length-t),16,16,'0')<<" ("<< strerror(errno) << ")\n";
                     secure_next_buffer(buff, id, true);
-                
+
                     pthread_exit(NULL);
                 }
                 else {
@@ -1456,61 +1456,61 @@ void *thread_write(void *arg) {
                 if (settings.is_verbose)
                     settings.ofstream_log_file << program_name << ": error: unable to load data just written in '"<< fo->file_name <<"' (read only " << current_read << " bytes)\n";
                 cerr << program_name << ": error: unable to load data just written in '"<< fo->file_name <<"' (read only " << current_read << " bytes)\n";
-                
+
                 secure_next_buffer(buff, id, true);
-                
+
                 pthread_exit(NULL);
             }
-            
+
             // a questo punto ho riletto senza errori (quindi il supporto non è fisicamente danneggiato)
             // ma se l'md5 diverge esco subito
             ///////////////////////////////////////// MD
             if (settings.is_md_files_out) {
                 for (int i1=0; i1<fo->tot_digests; i1++) {
-                    EVP_DigestUpdate(&(fo->ctx[i1]), local_buffer, current_read);
+                    EVP_DigestUpdate(fo->ctx[i1], local_buffer, current_read);
                 }
             }
-        
+
             if (settings.is_md_blocks_check) {           // calcolo e scrivo su file i digest dei blocchi
-                EVP_MD_CTX mdctx;
+                EVP_MD_CTX *mdctx;
                 unsigned char md_value[EVP_MAX_MD_SIZE];
                 unsigned int md_len;
 
                 for (int i1=0; i1<buff->tot_digests; i1++) {
-                    EVP_MD_CTX_init(&mdctx);
-                    EVP_DigestInit_ex(&mdctx, buff->digest_type[i1], NULL);
-                    EVP_DigestUpdate(&mdctx, local_buffer, current_read);
-                    EVP_DigestFinal_ex(&mdctx, md_value, &md_len);
-                    
+                    mdctx = EVP_MD_CTX_create();
+                    EVP_DigestInit_ex(mdctx, buff->digest_type[i1], NULL);
+                    EVP_DigestUpdate(mdctx, local_buffer, current_read);
+                    EVP_DigestFinal_ex(mdctx, md_value, &md_len);
+
                     bool uguali = true;
                     for (int i2=0; i2<md_len; i2++) {
                         if (md_value[i2] != buff->hash[i1][i2])
                             uguali = false;
                     }
-                    
+
                     if (!uguali) {
                         if (settings.is_verbose) {
                             settings.ofstream_log_file << program_name << ": error: " << settings.md_blocks[i1] << " block check failed"<<endl;
-                            
+
                             stringstream ss2;
                             for (int i2=0; i2<md_len; i2++) {
                                 ss2 << setw(2) << setfill('0') << setbase(16) << (unsigned int) buff->hash[i1][i2];
                             }
-                            
+
                             settings.ofstream_log_file << ss2.str() << " - " << num2str(fi_common->current_position-buff->length,16,16,'0')<<"-"<<
                                 num2str(fi_common->current_position,16,16,'0')<<" - " << fi_common->file_name << endl;
-                            
+
                             stringstream ss;
                             for (int i2=0; i2<md_len; i2++) {
                                 ss << setw(2) << setfill('0') << setbase(16) << (unsigned int) md_value[i2];
                             }
-                            
+
                             settings.ofstream_log_file << ss.str() << " - " << settings.md_blocks[i1] << " - " << num2str(pos-buff->length,16,16,'0')<<"-"<<
                                 num2str(pos,16,16,'0')<<" - "<< fo->file_name << endl;
                         }
-                        
+
                         secure_next_buffer(buff, id, true);
-                    
+
                         pthread_exit(NULL);
                     }
                 }
@@ -1518,33 +1518,33 @@ void *thread_write(void *arg) {
         }
      //   cerr << "write: " << (fo->b_compl+fo->b_part) << endl;
         // ------------------------------ fatto
-        
+
         bool esci = buff->is_last;
         secure_next_buffer(buff, id, false);
         if (esci) break;
-        
+
         buff = buff->the_other_buffer;
-        
+
     } while(true);
-    
+
     //cerr << fo->file_name << " " << fo->b_compl << "+" << fo->b_part << endl;
     pthread_exit(NULL);
 }
 
 void no_parallel(fastdd_file_t *fi, fastdd_file_t *fo) {
   /*  fi->b_part = fi->b_compl = 0;
-    
+
     buffer_t *buff = buffer;
-    
+
     int64_t bs= settings.bs;
     int64_t ibs= settings.ibs;
     int64_t obs= settings.obs;
     int64_t count= settings.count;
-    
+
     unsigned char **local_buffer;
     if (settings.is_md_blocks_check || settings.is_md_files_out) {
         local_buffer = (unsigned char **) malloc(tot_output_file*sizeof(unsigned char *));
-        
+
         for (int i=0; i<tot_output_file; i++) {
             int t = posix_memalign( (void **) &(local_buffer[i]), 512, settings.bs);
             if (t) {
@@ -1558,10 +1558,10 @@ void no_parallel(fastdd_file_t *fi, fastdd_file_t *fo) {
                 buffer[0].active[i] = false;
             }
         }
-    } 
-    
+    }
+
     bool is_find = (settings.total_regexes > 0);
-    
+
     int64_t tot_read;
     int64_t bytes_read, temp;
     while ((count<0 || (count>=0 && fi->b_compl+fi->b_part<count)) && !buff->is_last) {
@@ -1587,35 +1587,35 @@ void no_parallel(fastdd_file_t *fi, fastdd_file_t *fo) {
                 if (temp==-1)
                     bytes_read = -1;
             }
-            
+
             if (bytes_read==-1) {
                 cerr << program_name << ": error: " << strerror(errno) << endl;
                 exit(1);
             }
-                
+
             if (bytes_read==ibs)
                 fi->b_compl++;
             else if (bytes_read)
                 fi->b_part++;
-                
+
             tot_read+=bytes_read;
-            
+
             if ((count>0 && fi->b_compl+fi->b_part >= count) || !bytes_read) {
                 buff->is_last = true;
             }
-            
+
             if (buff->is_last)
                 break;
         }
         buff->length = tot_read;
-        
+
         ///////////////////////////////////////// MD
-        
+
         if (settings.is_md_blocks_save) {           // calcolo e scrivo su file i digest dei blocchi
             EVP_MD_CTX mdctx;
             unsigned char md_value[EVP_MAX_MD_SIZE];
             unsigned int md_len;
-            
+
             for (int i=0; i<tot_read; i+=ibs) {
                 for (int i1=0; i1<buff->tot_digests; i1++) {
                     EVP_MD_CTX_init(&mdctx);
@@ -1639,7 +1639,7 @@ void no_parallel(fastdd_file_t *fi, fastdd_file_t *fo) {
                 EVP_DigestUpdate(&(fi->ctx[i1]), buff->buffer, tot_read);
             }
         }
-        
+
         for (int i1=0; i1<buff->tot_digests; i1++) {
             if (settings.is_md_blocks_check) {
                 EVP_MD_CTX_init(&buff->ctx[i1]);
@@ -1662,34 +1662,34 @@ void no_parallel(fastdd_file_t *fi, fastdd_file_t *fo) {
                 else { // print in find_file_output all information
                     boost::sregex_iterator m1(search_buffer.begin(), search_buffer.end(), settings.re[j2], boost::match_default | boost::match_partial);
                     boost::sregex_iterator m2;
-                    
+
                     if (m1==m2) continue;
-                    
+
                     do {
                         boost::smatch m = *m1;
-                        
+
                         if (!m[0].matched) out_find << "? ";
-                        
+
                         out_find << setbase(10) << j2 << " " << ( current_blocks+m.position()/ibs ) << " " << (fi->current_position+m.position()) << " " << m.length(0) << " ";
                         for (int temp1=0; temp1<m.length(0); temp1++) {
                             out_find << num2str((int)(buff->buffer[m.position()+temp1] & 255),16,2,'0');
                         }
                         out_find << endl;
-                        
+
                         m1++;
                     } while ( !(m1 == m2));
-                    
+
                 }
             }
         }
-        
+
         fi->current_position+=tot_read;
         fi->byte_read+=tot_read;
-        
+
         // ---------------------- scrive
         for (int id=0; id<tot_output_file; id++) {
             if (!buff->active[id]) continue;
-            
+
             //// se serve riapro
             if (fo[id].is_direct_o && (buff->length&511)) {
                 int oldflags = fcntl (fo[id].file_descriptor, F_GETFL, 0);
@@ -1701,8 +1701,8 @@ void no_parallel(fastdd_file_t *fi, fastdd_file_t *fo) {
                     buff->active[id] = false;
                     continue;
                 }
-                
-                
+
+
                 oldflags &= ~O_DIRECT;
 
                 oldflags = fcntl(fo[id].file_descriptor, F_SETFL, oldflags);
@@ -1713,21 +1713,21 @@ void no_parallel(fastdd_file_t *fi, fastdd_file_t *fo) {
                     buff->active[id] = false;
                     continue;
                 }
-                
+
                 fo[id].is_direct_o = 0;
                 //cerr << fo[id].file_name << " -------------- riaperto" << endl;
             }
-            
+
             // ----------------------------- scrivo
             int64_t bytes_written = 0, temp1;
             for (int64_t j=0; j<buff->length; j+=MIN(obs, bs-j)) {
                 temp1 = write(fo[id].file_descriptor, buff->buffer+j, MIN(obs, buff->length-j));
-                
+
                 if (temp1==-1){
                     buff->active[id] = false;
                     break;
                 }
-                    
+
                 if (temp1==obs)
                     fo[id].b_compl++;
                 else if (temp1) {
@@ -1737,19 +1737,19 @@ void no_parallel(fastdd_file_t *fi, fastdd_file_t *fo) {
             }
             if (temp1==-1) continue;
         //    cerr << fo[id].file_name << " scritti " << bytes_written << endl;
-            
+
             if (bytes_written != tot_read) {
                 cerr << "errore: letti " << tot_read << " scritti " << bytes_written << " bytes" << endl;
                 buff->active[id] = false;
                 continue;
             }
-            
+
             // -------------------------------- rileggo
             if (settings.is_md_blocks_check || settings.is_md_files_out) {
                 int64_t pos = lseek(fo[id].file_descriptor, -bytes_written, SEEK_CUR);	// torno a monte del buffer appena scritto
                 int64_t current_read=0;
                 memset((void *) local_buffer[id], 0, bs);
-                
+
                 for (int t=0; t<buff->length; t+=MIN(obs, bs-t)) {
         //            cerr << ">>" << MIN(obs, buff->length-t) << endl;
                     int64_t t2 = read(fo[id].file_descriptor, local_buffer[id]+t, MIN(obs, buff->length-t));
@@ -1769,26 +1769,26 @@ void no_parallel(fastdd_file_t *fi, fastdd_file_t *fo) {
 
                 if (!buff->active[id])
                     continue;
-                    
+
                 if (current_read != buff->length) {
                     if (settings.is_verbose)
                         settings.ofstream_log_file << program_name << ": error: unable to load data just written in '"<< fo[id].file_name <<"' (read only " << current_read << " bytes)\n";
                     cerr << program_name << ": error: unable to load data just written in '"<< fo[id].file_name <<"' (read only " << current_read << " bytes)\n";
-                    
+
                     buff->active[id] = false;
                     continue;
                 }
-                
+
                 // a questo punto ho riletto senza errori (quindi il supporto non è fisicamente danneggiato)
                 // ma se l'md5 diverge esco subito
-                
+
                 ///////////////////// Hash Output
                 if (settings.is_md_files_out) {
                     for (int i1=0; i1<fo[id].tot_digests; i1++) {
                         EVP_DigestUpdate(&(fo[id].ctx[i1]), local_buffer[id], current_read);
                     }
                 }
-        
+
                 if (settings.is_md_blocks_check) {           // calcolo e scrivo su file i digest dei blocchi
                     EVP_MD_CTX mdctx;
                     unsigned char md_value[EVP_MAX_MD_SIZE];
@@ -1799,40 +1799,40 @@ void no_parallel(fastdd_file_t *fi, fastdd_file_t *fo) {
                         EVP_DigestInit_ex(&mdctx, buff->digest_type[i1], NULL);
                         EVP_DigestUpdate(&mdctx, local_buffer[id], current_read);
                         EVP_DigestFinal_ex(&mdctx, md_value, &md_len);
-                        
+
                         bool uguali = true;
                         for (int i2=0; i2<md_len; i2++) {
                             if (md_value[i2] != buff->hash[i1][i2])
                                 uguali = false;
                         }
-                        
+
                         if (!uguali) {
                             if (settings.is_verbose) {
                                 settings.ofstream_log_file << program_name << ": error: " << settings.md_blocks[i1] << " block check failed"<<endl;
-                                
+
                                 stringstream ss2;
                                 for (int i2=0; i2<md_len; i2++) {
                                     ss2 << setw(2) << setfill('0') << setbase(16) << (unsigned int) buff->hash[i1][i2];
                                 }
-                                
+
                                 settings.ofstream_log_file << ss2.str() << " - " << num2str(fi_common->current_position-buff->length,16,16,'0')<<"-"<<
                                     num2str(fi_common->current_position,16,16,'0')<<" - " << fi_common->file_name << endl;
-                                
+
                                 stringstream ss;
                                 for (int i2=0; i2<md_len; i2++) {
                                     ss << setw(2) << setfill('0') << setbase(16) << (unsigned int) md_value[i2];
                                 }
-                                
+
                                 settings.ofstream_log_file << ss.str() << " - " << settings.md_blocks[i1] << " - " << num2str(pos-buff->length,16,16,'0')<<"-"<<
                                     num2str(pos,16,16,'0')<<" - "<< fo->file_name << endl;
                             }
-                            
+
                             buff->active[id]=false;
-                            
+
                             bool tutti_finito=true;
                             for (int i1=0; i1<tot_output_file; i1++)
                                 if (buff->active[i1]) tutti_finito=false;
-                                
+
                             if (tutti_finito) buff->is_last = true;
                         }
                     }
@@ -1846,21 +1846,21 @@ void no_parallel(fastdd_file_t *fi, fastdd_file_t *fo) {
 string to_human_readable(double num) {
     double num2 = num;
     int i=0;
-    
+
     while (num2>=1024) {
         i++;
         num2/=1024;
     }
-    
+
     ostringstream temp;
     temp << num2;
-    
+
     char un[] = " KMGTPE";
-    
+
     temp << " ";
     if (i>0 && i<6)
         temp << un[i];
-    
+
     return temp.str();
 }
 
@@ -1870,12 +1870,12 @@ void final_stat() {
     }
     else
         cerr << '\r';
-    
+
     cerr << fi_common->file_name << ": " << fi_common->b_compl << "+" << fi_common->b_part << " blocks in" << endl;
     for (int i=0; i<tot_output_file; i++) {
         cerr << fo_common[i].file_name << ": " << fo_common[i].b_compl << "+" << fo_common[i].b_part <<  " blocks out" << endl;
     }
-    
+
     struct timeval t_2;
     gettimeofday(&t_2, NULL);
     int64_t diff = t_2.tv_sec*1000000+t_2.tv_usec-t_start;
@@ -1895,12 +1895,12 @@ void on_ctrlslash(int sig) {
 void init_modules() {
     fastdd_module_regex *temp_regex = new fastdd_module_regex(&fi_common, &settings);
     fastdd_module *temp = (fastdd_module *)temp_regex;
-    modules.push_back(temp);    
-    
+    modules.push_back(temp);
+
     fastdd_module_conv *temp_conv = new fastdd_module_conv();
     temp = (fastdd_module *)temp_conv;
     modules.push_back(temp);
-    
+
     fastdd_module_gzip *temp_gzip = new fastdd_module_gzip(&settings, (buffer_t *) &buffer[0]);
     temp = (fastdd_module *)temp_gzip;
     modules.push_back(temp);
@@ -1909,7 +1909,7 @@ void init_modules() {
 void fin_modules() {
     for (int i=0; i<modules.size(); i++) {
         bool ok = modules[i]->validate();
-        
+
         if (!ok) {
             cerr << modules[i]->get_name() << ": " << modules[i]->get_error() << endl;
             exit(1);
@@ -1920,27 +1920,27 @@ void fin_modules() {
 int main(int argc, char *argv[]) {
     (void) signal(SIGINT, on_ctrlc);
     (void) signal(SIGQUIT, on_ctrlslash);
-    
+
     struct timeval t_2;
     gettimeofday(&t_2, NULL);
     t_start = t_2.tv_sec*1000000+t_2.tv_usec;
 //    t_start = t_1.tv_sec*1000000+t_1.tv_usec;
-    
+
     init_modules();
-    
+
     init_default_settings();
-    
+
     init_read_arguments_settings(argc, argv);
-    
+
     OpenSSL_add_all_digests();
-    
+
     init_buffers();
-    
+
     fi_common = init_input_file();
     fo_common = init_output_file();
-    
+
     fin_modules();
-    
+
     if (settings.is_parallel) {
         pthread_t threads[1+tot_output_file];
         pthread_attr_t attr;
@@ -1951,7 +1951,7 @@ int main(int argc, char *argv[]) {
         // avvio i thread
         pthread_create(&threads[0], &attr, thread_read, (void *) fi_common);
         //cerr << "input thread started\n";
-        
+
         for (int i=0; i<tot_output_file; i++) {
             //cerr << "starting " << fo[i].file_name << endl;
             for (int j=0; j<TOT_BUFFERS; j++)
@@ -1959,7 +1959,7 @@ int main(int argc, char *argv[]) {
             pthread_create(&threads[1+i], &attr, thread_write, (void *) (fo_common+i));
         }
         //cerr << tot_output_file << " output threads started\n";
-        
+
         // attendo che tutti finiscano
         for (int i=0; i<1+tot_output_file; i++) {
             pthread_join(threads[i], NULL);
@@ -1969,42 +1969,42 @@ int main(int argc, char *argv[]) {
         //cerr << "no_parallel" << endl;
         no_parallel(fi_common, fo_common);
     }
-    
+
     if (settings.is_progress_bar) {
         cerr << endl;
     }
-    
+
     final_stat();
-    
+
     if (settings.is_md_file_in) {
         for (int i1=0; i1<fi_common->tot_digests; i1++) {
-            EVP_DigestFinal_ex(&fi_common->ctx[i1], fi_common->hash[i1], &fi_common->hash_len[i1]);
+            EVP_DigestFinal_ex(fi_common->ctx[i1], fi_common->hash[i1], &fi_common->hash_len[i1]);
 
             stringstream ss;
             for (int i2=0; i2<fi_common->hash_len[i1]; i2++)
                 ss << setw(2) << setfill('0') << setbase(16) << (unsigned int)fi_common->hash[i1][i2];
-                
+
             if (settings.is_verbose)
                 settings.ofstream_log_file << ss.str() << " - " << settings.md_files[i1] << " - " << fi_common->file_name << endl;
             cerr << ss.str() << " - " << settings.md_files[i1] << " - " << fi_common->file_name << endl;
         }
     }
-    
+
     if (settings.is_md_files_out) {
         for (int i=0; i<tot_output_file; i++) {
             for (int i1=0; i1<fo_common[i].tot_digests; i1++) {
-                EVP_DigestFinal_ex(&fo_common[i].ctx[i1], fo_common[i].hash[i1], &fo_common[i].hash_len[i1]);
+                EVP_DigestFinal_ex(fo_common[i].ctx[i1], fo_common[i].hash[i1], &fo_common[i].hash_len[i1]);
                 stringstream ss;
                 for (int i2=0; i2<fo_common[i].hash_len[i1]; i2++)
                     ss << setw(2) << setfill('0') << setbase(16) << (unsigned int) fo_common[i].hash[i1][i2];
-                    
+
                 if (settings.is_verbose)
                     settings.ofstream_log_file << ss.str() << " - " << settings.md_files[i1] << " - " << fo_common[i].file_name << endl;
                 cerr << ss.str() << " - " << settings.md_files[i1] << " - " << fo_common[i].file_name << endl;
             }
         }
     }
-    
+
     if (settings.is_print_partition) {
         load_partition_types();
         vector<part> temp_pm = pm.get_partitions();
@@ -2012,12 +2012,12 @@ int main(int argc, char *argv[]) {
         for (int a=0; a<temp_pm.size(); a++)
             if (temp_pm[a].nome.size() > max_nome)
                 max_nome = temp_pm[a].nome.size();
-        
+
         if (temp_pm.size()>0)
             cerr << setw(max_nome) << setfill(' ') << "device" << "  boot           start             end          length  type  description" << endl;
         else
             cerr << "unable to read partition table" << endl;
-        
+
         for (int a=0; a<temp_pm.size(); a++) {
             cerr << setw(max_nome) << setfill(' ') << temp_pm[a].nome
                 << setw(5) << setfill(' ') << ( (temp_pm[a].is_bootable) ? "*" : " ")
@@ -2107,11 +2107,11 @@ void help() {
     cout << "   Here the actually available modules.\n" << endl;
 
     for (int a=0; a<modules.size(); a++) {
-        
+
         string temp = modules[a]->get_help();
         cout << temp << endl;
     }
-    
+
     cout << "EXAMPLES OF USE\n";
     cout << "   fastdd if=\"input file\" of=\"file with spaces\" of=another\\ one of=file3\n"
          << "          bs=1M hash-files=sha1,sha256 hash-blocks=md5 --hash-blocks-check\n"
@@ -2122,10 +2122,10 @@ void help() {
 }
 
 void version() {
-    cout << "fastdd, version 1.0.0\n Copyright (C) 2013, Free Software Foundation, Inc." << endl;
+    cout << "fastdd, version 1.1.0\n Copyright (C) 2013-2020, Free Software Foundation, Inc." << endl;
     cout << "Licence GPL2: GNU GPL version 2 <http://www.gnu.org/licenses/gpl-2.0.html>" << endl;
     cout << "This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you" << endl;
     cout << "are welcome to redistribute it under conditions specified in www.gnu.org site." << endl;
-    cout << "Authors: Paolo Bertasi, Nicola Zago" << endl;
-    cout << "Email: paolo.bert@gmail.com, zago.nicola@gmail.com" << endl;
+    cout << "Authors: Paolo Bertasi, Nicola Zago and Hans-Joachim Michl" << endl;
+    cout << "Email: paolo.bert@gmail.com, zago.nicola@gmail.com, i@hmichl.com" << endl;
 }

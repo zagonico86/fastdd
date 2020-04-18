@@ -1,7 +1,7 @@
 Installation Instructions
 *************************
 
-Copyright (C) 2013 Free Software Foundation, Inc.
+Copyright (C) 2013-2020 Free Software Foundation, Inc.
 
    Copying and distribution of this file, with or without modification,
 are permitted in any medium without royalty provided the copyright
@@ -18,14 +18,17 @@ Basic Installation
 
   3. Copy the executable  in a directory included  in the environmental
      variable PATH.
-     
+
 
 Required packages
 =================
-   Note that the current implementation requires the following packages:
-  
+   Note that the current implementation requires the following packages
+   on ubuntu-18.04:
+
+  * build-essential
+
   * zlib1g-dev
-  
+
   * libboost-regex-dev
 
-  * libssl
+  * libssl-dev

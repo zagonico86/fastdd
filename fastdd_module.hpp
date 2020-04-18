@@ -1,22 +1,22 @@
 /*
- * fastdd, v. 1.0.0, an open-ended forensic imaging tool
- * Copyright (C) 2013, Free Software Foundation, Inc.
- * written by Paolo Bertasi and Nicola Zago
- * 
+ * fastdd, v. 1.1.0, an open-ended forensic imaging tool
+ * Copyright (C) 2013-2020, Free Software Foundation, Inc.
+ * written by Paolo Bertasi, Nicola Zago and Hans-Joachim Michl
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- * 
+ *
  */
 
 #ifndef _FASTDD_MODULE_H
@@ -56,10 +56,10 @@ class fastdd_module {
     virtual bool transform(buffer_t *buff) { return false; }
     // get error occurred after transform
     virtual string get_error(void) { return ""; }
-    
+
     // get a brief help for the fastdd --help flag
     virtual string get_help(void) { return ""; }
-    
+
     virtual ~fastdd_module() { }
 };
 
