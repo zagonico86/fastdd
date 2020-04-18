@@ -4,10 +4,8 @@ fastdd  is  an open-ended  imagin tool.  It  provides  a powerful  command  line
 interface  to perform efficent imaging of devices,  or more in general of files.
 It also provides a C++ interface  that allows developers to easily extend fastdd
 capabilities, modifying copied data on-the-fly.
-For more information on this, please visit fastdd homepage:
-http://www.dei.unipd.it/~zagonico/fastdd
-or its page on git:
-https://github.com/zagonico86/fastdd
+For more information on this, please visit fastdd github repository:
+https://github.com/hmic/fastdd (https://github.com/zagonico86/fastdd)
 
 REQUIREMENTS
 ============
@@ -113,3 +111,4 @@ Contact info
 ------------
 Paolo Bertasi <paolo.bert@gmail.com>
 Nicola Zago <zago.nicola@gmail.com>
+Hans-Joachim Michl <i@hmichl.com>

@@ -1,7 +1,7 @@
 /*
- * fastdd, v. 1.0.0, an open-ended forensic imaging tool
- * Copyright (C) 2013, Free Software Foundation, Inc.
- * written by Paolo Bertasi and Nicola Zago
+ * fastdd, v. 1.1.0, an open-ended forensic imaging tool
+ * Copyright (C) 2013-2020, Free Software Foundation, Inc.
+ * written by Paolo Bertasi, Nicola Zago and Hans-Joachim Michl
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License

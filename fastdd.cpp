@@ -1,7 +1,7 @@
 /*
- * fastdd, v. 1.0.0, an open-ended forensic imaging tool
- * Copyright (C) 2013, Free Software Foundation, Inc.
- * written by Paolo Bertasi and Nicola Zago
+ * fastdd, v. 1.1.0, an open-ended forensic imaging tool
+ * Copyright (C) 2013-2020, Free Software Foundation, Inc.
+ * written by Paolo Bertasi, Nicola Zago and Hans-Joachim Michl
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -587,7 +587,7 @@ void init_buffers() {
         buffer[i].tot_digests = 0;
         if (settings.is_md_blocks_check || settings.is_md_blocks_save) {
             buffer[i].tot_digests = settings.md_blocks.size();
-            buffer[i].ctx = (EVP_MD_CTX *) malloc(sizeof(EVP_MD_CTX) * buffer[i].tot_digests);
+            buffer[i].ctx = (EVP_MD_CTX **) malloc(sizeof(EVP_MD_CTX *) * buffer[i].tot_digests);
             buffer[i].digest_type = (const EVP_MD **) malloc(sizeof(const EVP_MD *) * buffer[i].tot_digests);
             buffer[i].hash = (unsigned char **) malloc(sizeof(unsigned char *) * buffer[i].tot_digests);
             buffer[i].hash_len = (unsigned int *) malloc(buffer[i].tot_digests * sizeof(unsigned int) );
@@ -599,8 +599,8 @@ void init_buffers() {
                         cerr << program_name << ": unknown message digest "<< settings.md_blocks[j] << endl;
                         exit(1);
                 }
-                EVP_MD_CTX_init(&(buffer[i].ctx[j]));
-                EVP_DigestInit_ex(&(buffer[i].ctx[j]), buffer[i].digest_type[j], NULL);
+                buffer[i].ctx[j] = EVP_MD_CTX_create();
+                EVP_DigestInit_ex(buffer[i].ctx[j], buffer[i].digest_type[j], NULL);
 
                 buffer[i].hash[j] = (unsigned char *) malloc(EVP_MAX_MD_SIZE * sizeof(unsigned char));
                 memset(buffer[i].hash[j], 0, EVP_MAX_MD_SIZE);
@@ -779,7 +779,7 @@ fastdd_file_t *init_input_file() {
     if (settings.is_md_file_in) {
         ris->tot_digests = settings.md_files.size();
 
-        ris->ctx = (EVP_MD_CTX *) malloc(ris->tot_digests * sizeof(EVP_MD_CTX) );
+        ris->ctx = (EVP_MD_CTX **) malloc(ris->tot_digests * sizeof(EVP_MD_CTX *) );
         ris->digest_type = (const EVP_MD **) malloc(ris->tot_digests * sizeof(const EVP_MD *) );
         ris->hash = (unsigned char **) malloc(ris->tot_digests * sizeof(unsigned char *) );
         ris->hash_len = (unsigned int *) malloc(ris->tot_digests * sizeof(unsigned int) );
@@ -791,8 +791,8 @@ fastdd_file_t *init_input_file() {
                     cerr << program_name << ": unknown message digest "<< settings.md_files[i] << endl;
                     exit(1);
             }
-            EVP_MD_CTX_init(&(ris->ctx[i]));
-            EVP_DigestInit_ex(&(ris->ctx[i]), ris->digest_type[i], NULL);
+            ris->ctx[i] = EVP_MD_CTX_create();
+            EVP_DigestInit_ex(ris->ctx[i], ris->digest_type[i], NULL);
 
             ris->hash[i] = (unsigned char *) malloc(EVP_MAX_MD_SIZE * sizeof( unsigned char));
             memset(ris->hash[i], 0, EVP_MAX_MD_SIZE);
@@ -885,7 +885,7 @@ fastdd_file_t *init_output_file() {
             if (settings.is_md_files_out) {
                 ris[i].tot_digests = settings.md_files.size();
 
-                ris[i].ctx = (EVP_MD_CTX *) malloc(ris[i].tot_digests * sizeof(EVP_MD_CTX) );
+                ris[i].ctx = (EVP_MD_CTX **) malloc(ris[i].tot_digests * sizeof(EVP_MD_CTX *) );
                 ris[i].digest_type = (const EVP_MD **) malloc(ris[i].tot_digests * sizeof(const EVP_MD *) );
                 ris[i].hash = (unsigned char **) malloc(ris[i].tot_digests * sizeof(unsigned char *) );
                 ris[i].hash_len = (unsigned int *) malloc(ris[i].tot_digests * sizeof(unsigned int) );
@@ -897,8 +897,8 @@ fastdd_file_t *init_output_file() {
                             cerr << program_name << ": unknown message digest "<< settings.md_files[j] << endl;
                             exit(1);
                     }
-                    EVP_MD_CTX_init(&(ris[i].ctx[j]));
-                    EVP_DigestInit_ex(&(ris[i].ctx[j]), ris[i].digest_type[j], NULL);
+                    ris[i].ctx[j] = EVP_MD_CTX_create();
+                    EVP_DigestInit_ex(ris[i].ctx[j], ris[i].digest_type[j], NULL);
 
                     ris[i].hash[j] = (unsigned char *) malloc(EVP_MAX_MD_SIZE * sizeof(unsigned char));
                     memset(ris[i].hash[j], 0, EVP_MAX_MD_SIZE);
@@ -1162,16 +1162,16 @@ void *thread_read(void *arg) {
 
         ///////////////////////////////////////// MD
         if (settings.is_md_blocks_save) {           // calcolo e scrivo su file i digest dei blocchi
-            EVP_MD_CTX mdctx;
+            EVP_MD_CTX *mdctx;
             unsigned char md_value[EVP_MAX_MD_SIZE];
             unsigned int md_len;
 
             for (int i=0; i<tot_read; i+=ibs) {
                 for (int i1=0; i1<buff->tot_digests; i1++) {
-                    EVP_MD_CTX_init(&mdctx);
-                    EVP_DigestInit_ex(&mdctx, buff->digest_type[i1], NULL);
-                    EVP_DigestUpdate(&mdctx, buff->buffer+i, MIN(ibs,tot_read-i));
-                    EVP_DigestFinal_ex(&mdctx, md_value, &md_len);
+                    mdctx = EVP_MD_CTX_create();
+                    EVP_DigestInit_ex(mdctx, buff->digest_type[i1], NULL);
+                    EVP_DigestUpdate(mdctx, buff->buffer+i, MIN(ibs,tot_read-i));
+                    EVP_DigestFinal_ex(mdctx, md_value, &md_len);
                     stringstream ss;
                     for (int i2=0; i2<md_len; i2++) {
                         ss << setfill('0') << setw(2) << setbase(16) << (unsigned int) md_value[i2];
@@ -1187,17 +1187,17 @@ void *thread_read(void *arg) {
         // digest complessivo del file
         for (int i1=0; i1<fi->tot_digests; i1++) {
             if (settings.is_md_file_in) {
-                EVP_DigestUpdate(&(fi->ctx[i1]), buff->buffer, tot_read);
+                EVP_DigestUpdate(fi->ctx[i1], buff->buffer, tot_read);
             }
         }
 
         // digest per il confronto
         for (int i1=0; i1<buff->tot_digests; i1++) {
             if (settings.is_md_blocks_check) {
-                EVP_MD_CTX_init(&buff->ctx[i1]);
-                EVP_DigestInit_ex(&buff->ctx[i1], buff->digest_type[i1], NULL);
-                EVP_DigestUpdate(&buff->ctx[i1], buff->buffer, tot_read);
-                EVP_DigestFinal_ex(&buff->ctx[i1], buff->hash[i1], &buff->hash_len[i1]);
+                buff->ctx[i1] = EVP_MD_CTX_create();
+                EVP_DigestInit_ex(buff->ctx[i1], buff->digest_type[i1], NULL);
+                EVP_DigestUpdate(buff->ctx[i1], buff->buffer, tot_read);
+                EVP_DigestFinal_ex(buff->ctx[i1], buff->hash[i1], &buff->hash_len[i1]);
             }
         }
 
@@ -1467,20 +1467,20 @@ void *thread_write(void *arg) {
             ///////////////////////////////////////// MD
             if (settings.is_md_files_out) {
                 for (int i1=0; i1<fo->tot_digests; i1++) {
-                    EVP_DigestUpdate(&(fo->ctx[i1]), local_buffer, current_read);
+                    EVP_DigestUpdate(fo->ctx[i1], local_buffer, current_read);
                 }
             }
 
             if (settings.is_md_blocks_check) {           // calcolo e scrivo su file i digest dei blocchi
-                EVP_MD_CTX mdctx;
+                EVP_MD_CTX *mdctx;
                 unsigned char md_value[EVP_MAX_MD_SIZE];
                 unsigned int md_len;
 
                 for (int i1=0; i1<buff->tot_digests; i1++) {
-                    EVP_MD_CTX_init(&mdctx);
-                    EVP_DigestInit_ex(&mdctx, buff->digest_type[i1], NULL);
-                    EVP_DigestUpdate(&mdctx, local_buffer, current_read);
-                    EVP_DigestFinal_ex(&mdctx, md_value, &md_len);
+                    mdctx = EVP_MD_CTX_create();
+                    EVP_DigestInit_ex(mdctx, buff->digest_type[i1], NULL);
+                    EVP_DigestUpdate(mdctx, local_buffer, current_read);
+                    EVP_DigestFinal_ex(mdctx, md_value, &md_len);
 
                     bool uguali = true;
                     for (int i2=0; i2<md_len; i2++) {
@@ -1978,7 +1978,7 @@ int main(int argc, char *argv[]) {
 
     if (settings.is_md_file_in) {
         for (int i1=0; i1<fi_common->tot_digests; i1++) {
-            EVP_DigestFinal_ex(&fi_common->ctx[i1], fi_common->hash[i1], &fi_common->hash_len[i1]);
+            EVP_DigestFinal_ex(fi_common->ctx[i1], fi_common->hash[i1], &fi_common->hash_len[i1]);
 
             stringstream ss;
             for (int i2=0; i2<fi_common->hash_len[i1]; i2++)
@@ -1993,7 +1993,7 @@ int main(int argc, char *argv[]) {
     if (settings.is_md_files_out) {
         for (int i=0; i<tot_output_file; i++) {
             for (int i1=0; i1<fo_common[i].tot_digests; i1++) {
-                EVP_DigestFinal_ex(&fo_common[i].ctx[i1], fo_common[i].hash[i1], &fo_common[i].hash_len[i1]);
+                EVP_DigestFinal_ex(fo_common[i].ctx[i1], fo_common[i].hash[i1], &fo_common[i].hash_len[i1]);
                 stringstream ss;
                 for (int i2=0; i2<fo_common[i].hash_len[i1]; i2++)
                     ss << setw(2) << setfill('0') << setbase(16) << (unsigned int) fo_common[i].hash[i1][i2];
@@ -2122,10 +2122,10 @@ void help() {
 }
 
 void version() {
-    cout << "fastdd, version 1.0.0\n Copyright (C) 2013, Free Software Foundation, Inc." << endl;
+    cout << "fastdd, version 1.1.0\n Copyright (C) 2013-2020, Free Software Foundation, Inc." << endl;
     cout << "Licence GPL2: GNU GPL version 2 <http://www.gnu.org/licenses/gpl-2.0.html>" << endl;
     cout << "This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you" << endl;
     cout << "are welcome to redistribute it under conditions specified in www.gnu.org site." << endl;
-    cout << "Authors: Paolo Bertasi, Nicola Zago" << endl;
-    cout << "Email: paolo.bert@gmail.com, zago.nicola@gmail.com" << endl;
+    cout << "Authors: Paolo Bertasi, Nicola Zago and Hans-Joachim Michl" << endl;
+    cout << "Email: paolo.bert@gmail.com, zago.nicola@gmail.com, i@hmichl.com" << endl;
 }

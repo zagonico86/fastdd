@@ -1,7 +1,7 @@
 /*
- * fastdd, v. 1.0.0, an open-ended forensic imaging tool
- * Copyright (C) 2013, Free Software Foundation, Inc.
- * written by Paolo Bertasi and Nicola Zago
+ * fastdd, v. 1.1.0, an open-ended forensic imaging tool
+ * Copyright (C) 2013-2020, Free Software Foundation, Inc.
+ * written by Paolo Bertasi, Nicola Zago and Hans-Joachim Michl
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -39,7 +39,7 @@ struct _buffer_t {
     uint64_t length;
 
     int tot_digests;
-    EVP_MD_CTX *ctx;
+    EVP_MD_CTX **ctx;
     const EVP_MD **digest_type;
     unsigned char **hash;
     unsigned int *hash_len;
@@ -76,7 +76,7 @@ typedef struct _fastdd_file_t {
 
     int tot_digests;
     const EVP_MD **digest_type;
-    EVP_MD_CTX *ctx;
+    EVP_MD_CTX **ctx;
     unsigned char **hash;
     unsigned int *hash_len;
 } fastdd_file_t;
